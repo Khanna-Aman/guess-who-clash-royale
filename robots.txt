@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://Khanna-Aman.github.io/guess-who-clash-royale/sitemap.xml

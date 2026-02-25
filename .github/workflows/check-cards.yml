@@ -1,0 +1,122 @@
+name: 🃏 Auto-Update Clash Royale Cards
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FULLY AUTOMATED — no human action required.
+#
+# The pipeline runs every Monday at 08:00 UTC. When new cards, hero skins, or
+# evolutions are detected, it patches the card data files and commits directly
+# to main. That commit then triggers deploy.yml, which republishes GitHub Pages.
+#
+# Full auto-chain:
+#   schedule (Mon 08:00 UTC)
+#     → check-new-cards.js  (Gemini + CDN probes)
+#       → git commit & push to main  (if anything changed)
+#         → deploy.yml fires  (push-to-main trigger)
+#           → GitHub Pages updated  ✅  zero human intervention
+#
+# HOW TO TEST MANUALLY (no need to wait for Monday):
+#   GitHub → Actions tab → "🃏 Auto-Update Clash Royale Cards" → Run workflow
+#
+# FAILURE NOTIFICATIONS:
+#   • GitHub emails you automatically on any workflow failure (repo owner)
+#   • If the pipeline step itself errors, a GitHub Issue is auto-created
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    - cron: '0 8 * * 1'   # Every Monday 08:00 UTC
+  workflow_dispatch:        # Manually triggerable from the Actions tab
+
+# Principle of least privilege
+permissions:
+  contents: write   # Required to commit patched card files back to main
+  issues:   write   # Required to open a failure-notification issue
+
+jobs:
+  auto-update-cards:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: .github/scripts/package-lock.json
+
+      - name: 📦 Install script dependencies (locked versions)
+        run: npm ci
+        working-directory: .github/scripts
+
+      - name: 🤖 Run auto-update pipeline
+        id: pipeline
+        run: node .github/scripts/check-new-cards.js
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: 💾 Commit & push updated card files
+        if: steps.pipeline.outputs.files_changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/cards.js data/CARDS_DATA.json js/cards-annotations.js js/config-filters.js
+          git diff --staged --quiet || git commit -m "🃏 auto-update: new CR cards added by pipeline"
+          git push
+          # NOTE: This push intentionally triggers deploy.yml to redeploy GitHub Pages.
+
+      - name: ✅ Job Summary
+        if: success()
+        run: |
+          if [ "${{ steps.pipeline.outputs.files_changed }}" = "true" ]; then
+            echo "### 🃏 New cards detected and committed!" >> $GITHUB_STEP_SUMMARY
+            echo "Deploy workflow will fire automatically to update GitHub Pages." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ No changes — card data is already up to date." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ── Failure notification ─────────────────────────────────────────────────
+      # If ANY step above fails, automatically open a GitHub Issue so you are
+      # notified in the repo (in addition to GitHub's default failure email).
+      - name: 🚨 Open failure issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Card update pipeline failed — ${new Date().toISOString().slice(0,10)}`;
+            const body = [
+              '## 🚨 Auto-Update Pipeline Failure',
+              '',
+              `**Workflow run:** [View logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              '',
+              '**What to check:**',
+              '- Is `GEMINI_API_KEY` still valid? Test it at [Google AI Studio](https://aistudio.google.com/)',
+              '- Did the RoyaleAPI data source change format?',
+              '- Are there any Node.js errors in the run logs above?',
+              '',
+              '_This issue was created automatically by the card-update workflow._',
+              '_Close it once the problem is resolved._',
+            ].join('\n');
+
+            // Check if a failure issue is already open (avoid duplicates)
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'pipeline-failure',
+            });
+
+            if (existingIssues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['pipeline-failure', 'bug'],
+              });
+            } else {
+              console.log('Failure issue already open — skipping duplicate creation.');
+            }

@@ -1,0 +1,38 @@
+# GitHub Labels
+# ─────────────────────────────────────────────────────────────────────────────
+# This file documents the custom labels used in this repository.
+# Create them at: github.com/Khanna-Aman/GuessWho_CR/labels
+#
+# After first push, run this from the repo root to create them via GitHub CLI:
+#   gh label create "pipeline-failure" --color "e11d48" --description "Auto-update pipeline failed"
+#   gh label create "card-data" --color "7c3aed" --description "Card data is wrong or missing"
+# ─────────────────────────────────────────────────────────────────────────────
+
+labels:
+  - name: "pipeline-failure"
+    color: "e11d48"
+    description: "Auto-update pipeline failed — check the Actions tab"
+
+  - name: "card-data"
+    color: "7c3aed"
+    description: "Card data is incorrect or a card is missing"
+
+  - name: "bug"
+    color: "d73a4a"
+    description: "Something isn't working"
+
+  - name: "enhancement"
+    color: "0e8a16"
+    description: "New feature or improvement"
+
+  - name: "dependencies"
+    color: "0075ca"
+    description: "Dependency update (Dependabot)"
+
+  - name: "github-actions"
+    color: "000000"
+    description: "GitHub Actions workflow update"
+
+  - name: "pipeline"
+    color: "f59e0b"
+    description: "CI/CD pipeline script update"

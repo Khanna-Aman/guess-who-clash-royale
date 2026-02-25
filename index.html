@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Royale – Guess Who?</title>
+    <meta name="description"
+        content="A high-fidelity local multiplayer Guess Who game featuring all 121 Clash Royale cards. No install needed — open and play instantly.">
+
+    <!-- Open Graph / Social sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://Khanna-Aman.github.io/guess-who-clash-royale/">
+    <meta property="og:title" content="Clash Royale — Guess Who?">
+    <meta property="og:description"
+        content="A high-fidelity local multiplayer deduction game featuring all 121 Clash Royale cards. Zero install — open and play instantly.">
+    <meta property="og:image"
+        content="https://Khanna-Aman.github.io/guess-who-clash-royale/docs/assets/gemini_img1.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Clash Royale — Guess Who?">
+    <meta name="twitter:description"
+        content="A high-fidelity local multiplayer deduction game featuring all 121 Clash Royale cards.">
+    <meta name="twitter:image"
+        content="https://Khanna-Aman.github.io/guess-who-clash-royale/docs/assets/gemini_img1.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- ═══════ START SCREEN ═══════ -->
+    <div id="startScreen" class="screen min-h-screen flex items-center justify-center p-4">
+        <div class="modal-content animate-in" style="max-width:560px;">
+            <div class="mb-6">
+                <div style="font-size:3rem;margin-bottom:.5rem;">⚔️</div>
+                <h1 class="text-3xl font-black uppercase tracking-wider mb-1"
+                    style="background:linear-gradient(180deg,#fff 0%,#facc15 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">
+                    Guess Who</h1>
+                <p style="font-size:.8rem;color:#94a3b8;font-weight:700;letter-spacing:.1em;">CLASH ROYALE EDITION</p>
+            </div>
+            <div
+                style="background:rgba(30,41,59,.5);border-radius:.75rem;padding:1.25rem;margin-bottom:1.5rem;border:1px solid rgba(51,65,85,.5);text-align:left;">
+                <h3 style="font-size:1.1rem;font-weight:700;text-align:center;color:#38bdf8;margin-bottom:.75rem;">How
+                    to Play</h3>
+                <p style="color:#cbd5e1;margin-bottom:.5rem;font-size:.85rem;"><span
+                        style="color:#38bdf8;font-weight:700;">1.</span> Player 1 secretly picks their own card, then
+                    passes the device.</p>
+                <p style="color:#cbd5e1;margin-bottom:.5rem;font-size:.85rem;"><span
+                        style="color:#38bdf8;font-weight:700;">2.</span> Player 2 secretly picks their own card, then
+                    the game begins!</p>
+                <p style="color:#cbd5e1;margin-bottom:.5rem;font-size:.85rem;"><span
+                        style="color:#38bdf8;font-weight:700;">3.</span> Players alternate turns trying to guess the
+                    opponent's card using filters to eliminate cards. Each filter = <strong style="color:#fbbf24;">+1
+                        point</strong>.</p>
+                <p style="color:#cbd5e1;margin-bottom:.5rem;font-size:.85rem;"><span
+                        style="color:#38bdf8;font-weight:700;">4.</span> Click cards to flip/unflip them manually
+                    (free). Use <strong style="color:#fbbf24;">Undo</strong> or <strong style="color:#fbbf24;">Manual
+                        (+/−)</strong> for verbal questions.</p>
+                <p style="color:#cbd5e1;font-size:.85rem;"><span style="color:#38bdf8;font-weight:700;">5.</span> When
+                    ready, guess the card (<strong style="color:#fbbf24;">+1 point</strong> too). Lower score wins!</p>
+            </div>
+            <button id="btnStart" class="btn-cr btn-gold" style="font-size:1.1rem;padding:.75rem 2.5rem;width:100%;">⚔️
+                Start Battle</button>
+        </div>
+    </div>
+
+    <!-- ═══════ CARD PICKER SCREEN ═══════ -->
+    <div id="pickScreen" class="screen hidden min-h-screen p-4">
+        <div style="max-width:64rem;margin:0 auto;">
+            <div style="text-align:center;margin-bottom:1rem;" class="animate-in">
+                <div style="font-size:2rem;margin-bottom:.5rem;">🃏</div>
+                <h2 id="pickTitle" class="text-2xl font-black uppercase mb-1 text-blue-400">Player 1</h2>
+                <p id="pickSubtitle" style="font-size:.85rem;color:#94a3b8;">Pick the card your opponent will have to
+                    guess</p>
+            </div>
+            <input id="pickSearch" type="text" class="picker-search mb-3" placeholder="🔍 Search cards..."
+                autocomplete="off">
+            <div id="pickGrid" class="picker-grid mb-4"></div>
+            <div style="text-align:center;">
+                <button id="pickConfirm" class="btn-cr btn-gold" style="font-size:.9rem;padding:.6rem 2rem;"
+                    disabled>Select a card first</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ GAME SCREEN ═══════ -->
+    <div id="gameScreen" class="screen hidden">
+
+        <!-- Header -->
+        <header class="game-header" style="position:sticky;top:0;z-index:90;">
+            <div class="container-spaced"
+                style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;padding-top:.75rem;padding-bottom:.75rem;">
+                <div style="display:flex;align-items:center;gap:.75rem;">
+                    <span style="font-size:1.5rem;">⚔️</span>
+                    <h1 class="game-title" style="font-size:1.1rem;">Guess Who</h1>
+                </div>
+                <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                    <div class="score-badge">
+                        <span id="currentPlayerLabel"
+                            style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#60a5fa;">P1
+                            Questions</span>
+                        <div style="display:flex;align-items:center;gap:.25rem;">
+                            <button id="btnScoreMinus" class="score-adjust" title="Remove 1 point"
+                                aria-label="Remove 1 point">−</button>
+                            <span id="currentScore"
+                                style="font-size:1.1rem;font-weight:900;color:#fbbf24;min-width:24px;text-align:center;">0</span>
+                            <button id="btnScorePlus" class="score-adjust"
+                                title="+1 custom question — records active card count for the progression graph"
+                                aria-label="Add 1 point — custom question">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Phase Banner -->
+        <div class="container-spaced" style="padding-top:.75rem;padding-bottom:.25rem;">
+            <div id="phaseBanner" class="phase-banner p1">Player 1's Turn — Guess the Card!</div>
+        </div>
+
+        <!-- ═══ FILTER BAR ═══ -->
+        <div class="filter-bar-wrapper">
+            <div class="container-spaced" style="padding-top:.75rem;padding-bottom:.75rem;">
+
+                <!-- Row 1: Type & Rarity -->
+                <div class="filter-row">
+                    <span class="filter-group-label">Type</span>
+                    <select id="typeFilter" class="cost-select">
+                        <option value="">🗡️ Is type…</option>
+                        <option value="Troop">🗡️ Troop</option>
+                        <option value="Spell">✨ Spell</option>
+                        <option value="Building">🏰 Building</option>
+                    </select>
+
+                    <span class="filter-sep">|</span>
+                    <span class="filter-group-label">Rarity</span>
+                    <select id="rarityFilter" class="cost-select">
+                        <option value="">⭐ Is rarity…</option>
+                        <option value="Common">⬜ Common</option>
+                        <option value="Rare">🟧 Rare</option>
+                        <option value="Epic">🟪 Epic</option>
+                        <option value="Legendary">🌈 Legendary</option>
+                        <option value="Champion">👑 Champion</option>
+                    </select>
+                </div>
+
+                <!-- Row 2: Elixir, Attack Target, Flying -->
+                <div class="filter-row" style="margin-top:.4rem;">
+                    <span class="filter-group-label">Elixir</span>
+                    <select id="costFilter" class="cost-select">
+                        <option value="">💧 Cost…</option>
+                        <optgroup label="Exact Cost">
+                            <option value="eq:1">= 1</option>
+                            <option value="eq:2">= 2</option>
+                            <option value="eq:3">= 3</option>
+                            <option value="eq:4">= 4</option>
+                            <option value="eq:5">= 5</option>
+                            <option value="eq:6">= 6</option>
+                            <option value="eq:7">= 7</option>
+                            <option value="eq:8">= 8</option>
+                            <option value="eq:9">= 9</option>
+                        </optgroup>
+                        <optgroup label="Greater Than">
+                            <option value="gt:1">&gt; 1</option>
+                            <option value="gt:2">&gt; 2</option>
+                            <option value="gt:3">&gt; 3</option>
+                            <option value="gt:4">&gt; 4</option>
+                            <option value="gt:5">&gt; 5</option>
+                            <option value="gt:6">&gt; 6</option>
+                        </optgroup>
+                        <optgroup label="Less Than">
+                            <option value="lt:3">&lt; 3</option>
+                            <option value="lt:4">&lt; 4</option>
+                            <option value="lt:5">&lt; 5</option>
+                            <option value="lt:6">&lt; 6</option>
+                        </optgroup>
+                        <optgroup label="At Most / At Least">
+                            <option value="lte:3">≤ 3</option>
+                            <option value="lte:4">≤ 4</option>
+                            <option value="lte:5">≤ 5</option>
+                            <option value="gte:4">≥ 4</option>
+                            <option value="gte:5">≥ 5</option>
+                            <option value="gte:6">≥ 6</option>
+                        </optgroup>
+                    </select>
+
+                    <span class="filter-sep">|</span>
+                    <span class="filter-group-label">Attacks</span>
+                    <select id="attackFilter" class="cost-select">
+                        <option value="">🎯 Targets…</option>
+                        <option value="air-ground">🎯 Air &amp; Ground</option>
+                        <option value="ground">🛡️ Ground Only</option>
+                        <option value="buildings">🏰 Buildings Only</option>
+                        <option value="none">— None (Spell)</option>
+                    </select>
+
+                    <span class="filter-sep">|</span>
+                    <span class="filter-group-label">Moves</span>
+                    <select id="flyingFilter" class="cost-select">
+                        <option value="">✈️ Flying?</option>
+                        <option value="yes">✅ Yes — Flies</option>
+                        <option value="no">❌ No — Ground unit</option>
+                    </select>
+                </div>
+
+                <!-- Row 3: Special Mechanics & Role — all as Yes / No dropdowns -->
+                <div class="filter-row" style="margin-top:.4rem;">
+                    <span class="filter-group-label">Evo</span>
+                    <select id="evoFilter" class="cost-select">
+                        <option value="">⚡ Has Evo?</option>
+                        <option value="yes">✅ Yes — Has Evo</option>
+                        <option value="no">❌ No — No Evo</option>
+                    </select>
+
+                    <span class="filter-group-label" style="margin-left:4px;">Hero</span>
+                    <select id="heroFilter" class="cost-select">
+                        <option value="">🦸 Has Hero?</option>
+                        <option value="yes">✅ Yes — Has Hero</option>
+                        <option value="no">❌ No — No Hero</option>
+                    </select>
+
+                    <span class="filter-sep">|</span>
+                    <span class="filter-group-label">Role</span>
+                    <select id="winconFilter" class="cost-select">
+                        <option value="">🏰 Win-Con?</option>
+                        <option value="yes">✅ Yes</option>
+                        <option value="no">❌ No</option>
+                    </select>
+                    <select id="swarmFilter" class="cost-select">
+                        <option value="">🐝 Swarm?</option>
+                        <option value="yes">✅ Yes</option>
+                        <option value="no">❌ No</option>
+                    </select>
+                    <select id="tankFilter" class="cost-select">
+                        <option value="">🛡️ Tank?</option>
+                        <option value="yes">✅ Yes</option>
+                        <option value="no">❌ No</option>
+                    </select>
+                    <select id="spawnerFilter" class="cost-select">
+                        <option value="">🥚 Spawner?</option>
+                        <option value="yes">✅ Yes</option>
+                        <option value="no">❌ No</option>
+                    </select>
+                    <select id="airFilter" class="cost-select">
+                        <option value="">✈️ Can hit air?</option>
+                        <option value="yes">✅ Yes</option>
+                        <option value="no">❌ No</option>
+                    </select>
+
+                    <span class="filter-sep">|</span>
+                    <div class="filter-action-group">
+                        <button id="btnUndoStep" class="filter-btn filter-btn-undo"
+                            aria-label="Undo last filter step">↩️ Step</button>
+                        <button id="btnUndoQuestion" class="filter-btn filter-btn-fullq"
+                            aria-label="Undo entire last question">⏪ Full&nbsp;Q</button>
+                        <button id="btnResetBoard" class="filter-btn filter-btn-reset"
+                            aria-label="Reset board and score">🔄 Reset</button>
+                    </div>
+                </div>
+
+                <!-- Row 4: Creature Type -->
+                <div class="filter-row" style="margin-top:.4rem;">
+                    <span class="filter-group-label">Creature</span>
+                    <select id="goblinFilter" class="cost-select">
+                        <option value="">👺 Goblin?</option>
+                        <option value="yes">✅ Yes — Is Goblin</option>
+                        <option value="no">❌ No — Not Goblin</option>
+                    </select>
+                    <select id="undeadFilter" class="cost-select">
+                        <option value="">💀 Undead?</option>
+                        <option value="yes">✅ Yes — Is Undead</option>
+                        <option value="no">❌ No — Not Undead</option>
+                    </select>
+                    <select id="manFilter" class="cost-select">
+                        <option value="">♂️ Male?</option>
+                        <option value="yes">✅ Yes — Male character</option>
+                        <option value="no">❌ No — Female / None</option>
+                    </select>
+                    <select id="humanFilter" class="cost-select">
+                        <option value="">🧑 Human?</option>
+                        <option value="yes">✅ Yes — Is Human</option>
+                        <option value="no">❌ No — Not Human</option>
+                    </select>
+                </div>
+
+                <!-- Board Controls Row: View + Sort (inside sticky filter bar) -->
+                <div class="filter-row board-controls-row"
+                    style="margin-top:.5rem;padding-top:.4rem;border-top:1px solid rgba(51,65,85,.4);">
+
+                    <!-- View Mode -->
+                    <span class="filter-group-label">View</span>
+                    <button id="btnViewAll" class="view-toggle-btn view-active">🃏 All</button>
+                    <button id="btnViewActive" class="view-toggle-btn">✅ Active Only</button>
+
+                    <span class="filter-sep">|</span>
+
+                    <!-- Sort Controls -->
+                    <span class="filter-group-label">⇅ Sort by</span>
+                    <select id="sortKey" class="cost-select" title="Sort cards by...">
+                        <option value="default">Default</option>
+                        <option value="name">Name A–Z</option>
+                        <option value="elixir">💧 Elixir</option>
+                        <option value="rarity">⭐ Rarity</option>
+                        <option value="type">🗡️ Type</option>
+                    </select>
+                    <button id="btnSortDir" class="filter-btn sort-dir-btn" title="Toggle ascending / descending">↑
+                        Asc</button>
+
+                    <!-- Active card count pill — right-aligned -->
+                    <span id="activeCardCount" class="active-count-pill" style="margin-left:auto;">— active</span>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- Card Board -->
+        <main class="container-spaced" style="padding-top:1rem;padding-bottom:1rem;">
+            <div id="cardBoard" class="card-grid"></div>
+        </main>
+
+
+        <!-- Unified Right Rail: Secret Card + Guess + Log -->
+        <div class="right-rail">
+            <div class="secret-panel-rail">
+                <!-- Label -->
+                <span class="rail-label">Your Card</span>
+
+                <!-- Secret Slot + Mini Hold to View -->
+                <div style="position:relative; margin-bottom:10px;">
+                    <div id="secretSlot" class="secret-slot">
+                        <span class="secret-icon">?</span>
+                    </div>
+                    <button id="btnHoldView" class="reveal-mini-btn" title="Hold to peek at your card">👁</button>
+                </div>
+
+                <!-- Divider -->
+                <div style="width:80px;height:1px;background:#1e3a5f;"></div>
+
+                <!-- Make a Guess -->
+                <button id="btnGuess" class="btn-cr btn-gold">🎯 Guess (+1)</button>
+            </div>
+
+            <!-- Question Log panel inside the rail -->
+            <div class="q-log-panel">
+                <div class="q-log-panel-title">📋 Questions Asked</div>
+                <div id="questionLog" class="q-log-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ PASS DEVICE SCREEN ═══════ -->
+    <div id="passDeviceScreen" class="screen hidden pass-screen">
+        <div class="pass-screen-inner">
+            <div class="pass-screen-icon" id="passIcon">📱</div>
+            <h1 class="pass-screen-heading">Hand the device to</h1>
+            <div class="pass-screen-player" id="passPlayerName">Player 2</div>
+            <p class="pass-screen-sub" id="passSub">Player 1 — look away now 👀</p>
+
+            <div class="pass-screen-divider"></div>
+
+            <p class="pass-screen-cta-label">When <span id="passReadyName">Player 2</span> has the device:</p>
+            <button id="btnPassReady" class="pass-screen-btn">
+                <span id="passReadyBtnText">▶ I'm Player 2 — Start My Turn</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════ RESULTS SCREEN ═══════ -->
+    <div id="resultsScreen" class="screen hidden min-h-screen flex items-center justify-center p-4">
+        <div class="modal-content animate-in" style="max-width:560px;">
+            <div style="font-size:3rem;margin-bottom:1rem;">⚔️</div>
+            <h2 id="resultVerdict" class="text-2xl font-black uppercase mb-6" style="color:#facc15;">Results</h2>
+            <div style="display:flex;justify-content:center;gap:2rem;margin-bottom:1.5rem;">
+                <div style="text-align:center;">
+                    <div
+                        style="font-size:.85rem;font-weight:700;color:#60a5fa;text-transform:uppercase;margin-bottom:.25rem;">
+                        Player 1</div>
+                    <div style="font-size:2.5rem;font-weight:900;color:#fff;" id="resultScoreP1">0</div>
+                    <div style="font-size:.75rem;color:#64748b;">questions</div>
+                </div>
+                <div style="font-size:2rem;font-weight:900;color:#475569;align-self:center;">vs</div>
+                <div style="text-align:center;">
+                    <div
+                        style="font-size:.85rem;font-weight:700;color:#f87171;text-transform:uppercase;margin-bottom:.25rem;">
+                        Player 2</div>
+                    <div style="font-size:2.5rem;font-weight:900;color:#fff;" id="resultScoreP2">0</div>
+                    <div style="font-size:.75rem;color:#64748b;">questions</div>
+                </div>
+            </div>
+            <p style="font-size:.75rem;color:#64748b;margin-bottom:1.25rem;">Lower score wins — fewer questions = better
+                detective!</p>
+
+            <!-- Progression Graph -->
+            <div class="progression-graph-wrap">
+                <div class="progression-graph-title">📈 Card Elimination Progression</div>
+                <div style="font-size:.65rem;color:#64748b;text-align:center;margin-bottom:.5rem;">Active cards
+                    remaining after each question — lower = better elimination</div>
+                <canvas id="progressionCanvas" class="progression-canvas"></canvas>
+            </div>
+
+            <!-- Detailed Stats -->
+            <div class="stats-wrap">
+                <div class="stats-title">🔬 Detailed Stats</div>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th class="stats-label-col"></th>
+                            <th class="stats-p1-col">P1</th>
+                            <th class="stats-p2-col">P2</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                        <!-- filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+                <button id="btnPlayAgain" class="btn-cr btn-gold" style="flex:1;padding:.6rem;">🔄 Play Again</button>
+                <button id="btnBackToMenu" class="btn-cr btn-outline" style="flex:1;padding:.6rem;">🏠 Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ GUESS MODAL ═══════ -->
+    <div id="guessModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="guessModalTitle">
+        <div class="modal-content">
+            <h2 id="guessModalTitle"
+                style="font-size:1.25rem;font-weight:900;text-transform:uppercase;color:#fbbf24;margin-bottom:.5rem;">🎯
+                Make Your Guess!</h2>
+            <p id="guessPrompt" style="font-size:.85rem;color:#94a3b8;margin-bottom:1rem;"></p>
+            <input id="guessInput" type="text" placeholder="Type the card name..."
+                style="width:100%;background:#1e293b;border:2px solid #475569;border-radius:.5rem;padding:.75rem 1rem;color:#fff;font-family:'Outfit',sans-serif;font-weight:600;outline:none;transition:border-color .2s;margin-bottom:.5rem;"
+                autocomplete="off" aria-label="Card name guess">
+            <div id="guessSuggestions" style="max-height:10rem;overflow-y:auto;margin-bottom:1rem;text-align:left;"
+                role="listbox" aria-label="Card suggestions">
+            </div>
+            <div style="display:flex;gap:.75rem;">
+                <button id="btnGuessConfirm" class="btn-cr btn-gold" style="flex:1;padding:.6rem;">Confirm
+                    Guess</button>
+                <button id="btnGuessCancel" class="btn-cr btn-outline" style="flex:1;padding:.6rem;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ TRANSITION MODAL ═══════ -->
+    <div id="transitionModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="transTitle">
+        <div class="modal-content">
+            <div id="transIcon" style="font-size:3.5rem;margin-bottom:.75rem;"></div>
+            <h2 id="transTitle" style="font-size:1.5rem;font-weight:900;text-transform:uppercase;margin-bottom:.5rem;">
+            </h2>
+            <p id="transScore" style="font-size:.85rem;color:#94a3b8;margin-bottom:1.25rem;"></p>
+            <button id="transNextBtn" class="btn-cr btn-gold" style="width:100%;padding:.6rem;"></button>
+        </div>
+    </div>
+
+    <!-- ═══════ TOAST CONTAINER ═══════ -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="js/config-filters.js"></script>
+    <script src="js/cards-annotations.js"></script>
+    <script src="js/cards.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

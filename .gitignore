@@ -1,0 +1,48 @@
+# ── OS Artifacts ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor Directories ───────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Local Testing (Not for repo) ─────────────────────────────
+tests-internal/
+
+# ── Node (if ever added) ─────────────────────────────────────────────────────
+# Pipeline script deps are auto-installed by GitHub Actions — never commit them.
+# The .github/scripts/package-lock.json IS committed (locks exact dep versions
+# for the CI runner so that `npm ci` works reproducibly).
+.github/scripts/node_modules/
+node_modules/
+# Ignore only a root-level package-lock.json (there is none — the project has
+# no root package.json). Using a leading / keeps the pattern from accidentally
+# matching .github/scripts/package-lock.json, which MUST stay tracked.
+/package-lock.json
+
+# ── Build Outputs (if ever added) ────────────────────────────
+dist/
+build/
+
+# ── Environment / Secrets (NEVER commit these) ───────────────
+.env
+.env.*
+*.env
+
+# ── Scratch / Temp Files ─────────────────────────────────────
+temp/
+*.tmp
+*.bak
+
+# ── AI-Generated / Scratch Media ─────────────────────────────
+# (keep docs/assets/ tracked — only block root-level dumps)
+gemini_img*.png
+gemini_img*.jpg
+*.ai-generated.png

@@ -1,0 +1,12 @@
+{
+  "name": "guesswho-cr-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Auto card update pipeline for GuessWho CR",
+  "scripts": {
+    "check-cards": "node check-new-cards.js"
+  },
+  "dependencies": {
+    "@actions/core": "1.11.1"
+  }
+}
