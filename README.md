@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/gemini_img1.png" alt="Clash Royale — Guess Who? Banner" width="100%" style="border-radius:12px;max-width:900px;" />
+<img src="docs/assets/banner.png" alt="Clash Royale — Guess Who? Banner" width="100%" style="border-radius:12px;max-width:900px;" />
 
 # ⚔️ Clash Royale — Guess Who?
 
