@@ -83,7 +83,7 @@ jobs:
       # notified in the repo (in addition to GitHub's default failure email).
       - name: 🚨 Open failure issue
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = `🚨 Card update pipeline failed — ${new Date().toISOString().slice(0,10)}`;
