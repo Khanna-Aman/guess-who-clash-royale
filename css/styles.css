@@ -110,10 +110,45 @@ body::before {
     padding-right: var(--side-clearance);
 }
 
-@media (max-width: 768px) {
+/* ─── Responsive Layout ─── */
+@media (max-width: 1100px) {
+    :root {
+        --rail-width: 0px; /* hide from calculation */
+        --side-clearance: 1rem;
+    }
+
     .container-spaced {
         padding-right: 1rem;
-        /* On mobile, let it stack or overflow normally if rail is hidden */
+    }
+
+    /* Unstick headers on small screens to prevent UI vertical cramping */
+    .game-header, 
+    .filter-bar-wrapper {
+        position: static !important;
+    }
+
+    .right-rail {
+        position: static;
+        width: 100%;
+        margin-top: 2rem;
+        border-radius: 0;
+        border-right: none;
+        border-left: none;
+        border-top: 2px solid #1e3a5f;
+        background: rgba(15, 23, 42, 0.95);
+        box-shadow: none;
+        padding: 2rem 1rem;
+    }
+
+    .q-log-panel {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
     }
 }
 

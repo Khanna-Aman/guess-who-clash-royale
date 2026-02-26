@@ -7,6 +7,8 @@
 **A high-fidelity, local-multiplayer deduction game featuring the full Clash Royale card roster.**  
 Built entirely with vanilla HTML, CSS, and JavaScript. No frameworks. No build step. Just open and play.
 
+> 💻 **Note:** This game is best experienced on a laptop or desktop (large screen).
+
 [![Play Online](https://img.shields.io/badge/🎮%20Play%20Now-GitHub%20Pages-blue?style=for-the-badge&logo=github)](https://Khanna-Aman.github.io/guess-who-clash-royale/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 [![Cards](https://img.shields.io/badge/Cards-121-purple?style=for-the-badge)](./js/cards.js)
