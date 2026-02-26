@@ -207,6 +207,17 @@ See [SECURITY.md](./SECURITY.md) for our vulnerability disclosure policy.
 
 ---
 
+## ⚖️ Legal Disclaimer
+
+This is a **non-commercial, fan-made project** created for educational and entertainment purposes only. 
+
+*   **Clash Royale** assets, characters, and related media are trademarks and copyrights of **Supercell**.
+*   **Guess Who?** is a trademark of **Hasbro**.
+
+This project is **not affiliated with, endorsed by, or sponsored by** Supercell or Hasbro. No copyright or trademark infringement is intended. All original intellectual property belongs to their respective owners.
+
+---
+
 ## 📄 License
 
 [MIT](./LICENSE) — do whatever you like, just keep the attribution.
