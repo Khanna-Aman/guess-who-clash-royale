@@ -209,15 +209,15 @@ See [SECURITY.md](./SECURITY.md) for our vulnerability disclosure policy.
 
 ## ⚖️ Legal Disclaimer
 
-This is a **non-commercial, fan-made project** created for educational and entertainment purposes only. 
+This is a **non-commercial, fan-made project** created for educational and entertainment purposes only.
 
-*   **Clash Royale** assets, characters, and related media are trademarks and copyrights of **Supercell**.
-*   **Guess Who?** is a trademark of **Hasbro**.
+*   **Clash Royale** assets, characters, and related media are trademarks and copyrights of **Supercell Oy**. Card artwork is served at runtime from the [RoyaleAPI open-asset CDN](https://github.com/RoyaleAPI/cr-api-assets) and is not hosted or redistributed by this repository.
+*   **Guess Who?** is a trademark of **Hasbro, Inc.** No Hasbro visual assets are used; only the uncopyrightable gameplay mechanic (asking yes/no questions to deduce a hidden character) is referenced.
 
-This project is **not affiliated with, endorsed by, or sponsored by** Supercell or Hasbro. No copyright or trademark infringement is intended. All original intellectual property belongs to their respective owners.
+This project is **not affiliated with, endorsed by, or sponsored by** Supercell or Hasbro. It is created in compliance with [Supercell's Fan Content Policy](https://supercell.com/en/fan-content-policy/). No copyright or trademark infringement is intended. All original intellectual property belongs to their respective owners.
 
 ---
 
 ## 📄 License
 
-[MIT](./LICENSE) — do whatever you like, just keep the attribution.
+The original source code (JS, CSS, HTML, GitHub Actions) is released under the [MIT License](./LICENSE). Third-party assets — Clash Royale card artwork (© Supercell), the "Clash Royale" trademark, and the "Guess Who?" trademark — are explicitly excluded from that licence and remain the property of their respective owners. See [LICENSE](./LICENSE) for full details.

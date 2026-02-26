@@ -22,6 +22,23 @@ SOFTWARE.
 
 ---
 
-Note: This is an unofficial fan project. Clash Royale is a trademark of
-Supercell. Card artwork is © Supercell and served from the RoyaleAPI open
-asset CDN (https://github.com/RoyaleAPI/cr-api-assets) under their terms.
+SCOPE OF THIS LICENSE
+─────────────────────
+The MIT License above applies exclusively to the original source code authored
+in this repository: js/, css/, index.html, and .github/ scripts and workflows.
+
+The following are explicitly EXCLUDED from this MIT License and remain the
+property of their respective rights holders:
+
+  • Card artwork and all visual assets — © Supercell Oy.
+    Images are served at runtime from the RoyaleAPI open-asset CDN
+    (https://github.com/RoyaleAPI/cr-api-assets) and are NOT redistributed
+    or hosted by this repository.
+
+  • "Clash Royale" name, logo, and all related trademarks — © Supercell Oy.
+
+  • "Guess Who?" name and trademark — © Hasbro, Inc.
+
+This is an unofficial fan project created in compliance with Supercell's Fan
+Content Policy (https://supercell.com/en/fan-content-policy/). It is not
+affiliated with, endorsed by, or sponsored by Supercell or Hasbro.

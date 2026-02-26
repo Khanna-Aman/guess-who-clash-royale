@@ -16,6 +16,17 @@ function updateScoreUI(player) {
     const scoreEl = document.getElementById('currentScore');
     if (labelEl) labelEl.textContent = `P${player} Questions`;
     if (scoreEl) scoreEl.textContent = score;
+
+    const banner = document.getElementById('phaseBanner');
+    if (banner) {
+        banner.textContent = `Player ${player}'s Turn — Guess the Card!`;
+        banner.className = `phase-banner p${player}`;
+    }
+
+    const btnGuess = document.getElementById('btnGuess');
+    if (btnGuess) {
+        btnGuess.textContent = `🎯 GUESS PLAYER ${player === 1 ? 2 : 1}'S CARD`;
+    }
 }
 
 function showPassScreen(toPlayer, icon, btnLabel, onReady, lookAway = true) {
@@ -100,10 +111,10 @@ function showPickScreen(player) {
     confirmBtn.onclick = () => {
         if (!selected) return;
         if (player === 1) {
-            state.secretP2 = selected;
+            state.secretP1 = selected;
             showPassScreen(2, '🎴', '▶ I’m Player 2 — Pick My Card', () => setPhase(GamePhase.PICK_P2));
         } else {
-            state.secretP1 = selected;
+            state.secretP2 = selected;
             showPassScreen(1, '🔍', '▶ I’m Player 1 — Start Guessing!', () => setPhase(GamePhase.GUESS_P1), false);
         }
     };
@@ -224,29 +235,47 @@ function renderQuestionLog() {
 
 function wireBoardControls() {
     const sortSel = document.getElementById('sortKey');
-    const sortDirBtn = document.getElementById('sortDir');
-    const viewAll = document.getElementById('viewAll');
-    const viewActive = document.getElementById('viewActive');
-    const btnUndo = document.getElementById('btnUndo');
-    const btnResetTotal = document.getElementById('btnResetTotal');
+    const sortDirBtn = document.getElementById('btnSortDir');
+    const viewAll = document.getElementById('btnViewAll');
+    const viewActive = document.getElementById('btnViewActive');
+    const btnUndoStep = document.getElementById('btnUndoStep');
+    const btnUndoQ = document.getElementById('btnUndoQuestion');
+    const btnReset = document.getElementById('btnResetBoard');
 
     if (sortSel) {
         sortSel.onchange = () => { state.sortKey = sortSel.value; renderBoard(); };
     }
     if (sortDirBtn) {
-        sortDirBtn.onclick = () => { state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'; sortDirBtn.textContent = state.sortDir === 'asc' ? '↑' : '↓'; renderBoard(); };
+        sortDirBtn.onclick = () => {
+            state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+            sortDirBtn.textContent = state.sortDir === 'asc' ? '↑ Asc' : '↓ Desc';
+            renderBoard();
+        };
     }
     if (viewAll) {
-        viewAll.onclick = () => { state.viewMode = 'all'; viewAll.classList.add('active'); if (viewActive) viewActive.classList.remove('active'); renderBoard(); };
+        viewAll.onclick = () => {
+            state.viewMode = 'all';
+            viewAll.classList.add('view-active');
+            if (viewActive) viewActive.classList.remove('view-active');
+            renderBoard();
+        };
     }
     if (viewActive) {
-        viewActive.onclick = () => { state.viewMode = 'active'; viewActive.classList.add('active'); if (viewAll) viewAll.classList.remove('active'); renderBoard(); };
+        viewActive.onclick = () => {
+            state.viewMode = 'active';
+            viewActive.classList.add('view-active');
+            if (viewAll) viewAll.classList.remove('view-active');
+            renderBoard();
+        };
     }
-    if (btnUndo) {
-        btnUndo.onclick = () => undoFullQuestion(state.currentPlayer);
+    if (btnUndoStep) {
+        btnUndoStep.onclick = () => undoLast(state.currentPlayer);
     }
-    if (btnResetTotal) {
-        btnResetTotal.onclick = () => resetBoard();
+    if (btnUndoQ) {
+        btnUndoQ.onclick = () => undoFullQuestion(state.currentPlayer);
+    }
+    if (btnReset) {
+        btnReset.onclick = () => resetBoard();
     }
 
     // Guessing logic
@@ -254,22 +283,22 @@ function wireBoardControls() {
     if (btnGuess) btnGuess.onclick = () => {
         const secret = state.currentPlayer === 1 ? state.secretP2 : state.secretP1;
         const modal = document.getElementById('guessModal');
-        const list = document.getElementById('guessList');
+        const list = document.getElementById('guessSuggestions');
         const input = document.getElementById('guessInput');
-        const confirm = document.getElementById('confirmGuessBtn');
-        const cancel = document.getElementById('cancelGuessBtn');
+        const confirm = document.getElementById('btnGuessConfirm');
+        const cancel = document.getElementById('btnGuessCancel');
+
         input.value = '';
         list.innerHTML = '';
         confirm.disabled = true;
-        modal.classList.add('active');
+        modal.classList.add('show');
         input.focus();
 
-        cancel.onclick = () => modal.classList.remove('active');
+        cancel.onclick = () => modal.classList.remove('show');
         confirm.onclick = () => {
             const val = input.value.trim().toLowerCase();
             if (val === secret.name.toLowerCase()) {
-                modal.classList.remove('active');
-                showScreen('passDeviceScreen'); // Re-use pass screen for win message if needed, or simple direct phase
+                modal.classList.remove('show');
                 if (state.currentPlayer === 1) {
                     showPassScreen(2, '🔍', '▶ I’m Player 2 — Start My Turn!', () => setPhase(GamePhase.GUESS_P2), false);
                 } else {
@@ -278,7 +307,7 @@ function wireBoardControls() {
             } else {
                 showToast("Wrong guess! +1 question added.", "warn");
                 adjustScore(state.currentPlayer, 1);
-                modal.classList.remove('active');
+                modal.classList.remove('show');
                 // Track progression for manual guess
                 const active = state.board.filter(Boolean).length;
                 const prog = state.currentPlayer === 1 ? state.progressionP1 : state.progressionP2;
@@ -292,8 +321,8 @@ function wireBoardControls() {
 
 function onGuessInput() {
     const input = document.getElementById('guessInput');
-    const list = document.getElementById('guessList');
-    const confirm = document.getElementById('confirmGuessBtn');
+    const list = document.getElementById('guessSuggestions');
+    const confirm = document.getElementById('btnGuessConfirm');
     const val = input.value.trim().toLowerCase();
     list.innerHTML = '';
     confirm.disabled = true;
@@ -316,12 +345,25 @@ function onGuessInput() {
 
 function showResults() {
     showScreen('resultsScreen');
-    document.getElementById('winnerPlayer').textContent = state.scoreP1 < state.scoreP2 ? 'Player 1 Wins!' : (state.scoreP2 < state.scoreP1 ? 'Player 2 Wins!' : 'Draw!');
-    document.getElementById('p1FinalScore').textContent = state.scoreP1;
-    document.getElementById('p2FinalScore').textContent = state.scoreP2;
+    const verdict = document.getElementById('resultVerdict');
+    const s1 = state.scoreP1, s2 = state.scoreP2;
+    if (verdict) {
+        if (s1 < s2) verdict.textContent = '🏆 Player 1 Wins!';
+        else if (s2 < s1) verdict.textContent = '🏆 Player 2 Wins!';
+        else verdict.textContent = '🤝 It\'s a Draw!';
+    }
+    const p1ScoreEl = document.getElementById('resultScoreP1');
+    const p2ScoreEl = document.getElementById('resultScoreP2');
+    if (p1ScoreEl) p1ScoreEl.textContent = s1;
+    if (p2ScoreEl) p2ScoreEl.textContent = s2;
+
     renderProgressionGraph();
     renderStats();
-    document.getElementById('btnRestart').onclick = () => location.reload();
+
+    const btnPlayAgain = document.getElementById('btnPlayAgain');
+    if (btnPlayAgain) btnPlayAgain.onclick = () => location.reload();
+    const btnMenu = document.getElementById('btnBackToMenu');
+    if (btnMenu) btnMenu.onclick = () => location.reload();
 }
 
 function renderProgressionGraph() {

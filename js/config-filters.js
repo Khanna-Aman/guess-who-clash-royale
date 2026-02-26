@@ -92,3 +92,18 @@ const SPAWNER_CARDS = new Set([
     'Giant Skeleton',
     // ── Add new spawner cards here ────────────────────────
 ]);
+
+/**
+ * Cards considered "Win Conditions" (primary tower damage dealers).
+ */
+const WIN_CON_CARDS = new Set([
+    'Giant', 'Golem', 'Lava Hound', 'Hog Rider', 'Balloon', 'Battle Ram',
+    'Ram Rider', 'Royal Giant', 'Electro Giant', 'Goblin Giant', 'Wall Breakers',
+    'Skeleton Barrel', 'Goblin Drill', 'Graveyard', 'X-Bow', 'Mortar', 'Miner',
+    'Goblin Barrel', 'Three Musketeers', 'Elite Barbarians', 'Royal Hogs', 'Sparky'
+]);
+
+// --- NODE.JS EXPORTS ---
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SWARM_CARDS, TANK_CARDS, SPAWNER_CARDS, WIN_CON_CARDS };
+}

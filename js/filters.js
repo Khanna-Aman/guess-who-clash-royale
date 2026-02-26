@@ -71,14 +71,30 @@ function wireFilterEvents(player) {
     setupFilter('rarityFilter', v => (c => c.rarity === v), v => `💎 Rarity: ${v}`);
     // Type
     setupFilter('typeFilter', v => (c => c.type === v), v => `🗡️ Type: ${v}`);
-    // Target
-    setupFilter('targetFilter', v => (c => c.target === v), v => `🎯 Target: ${v}`);
+    // Target (Mapped to 'attackFilter' in HTML)
+    setupFilter('attackFilter', v => {
+        const targetMap = {
+            'air-ground': 'Air & Ground',
+            'ground': 'Ground',
+            'buildings': 'Buildings',
+            'none': 'None'
+        };
+        const targetValue = targetMap[v] || v;
+        return (c => c.target === targetValue);
+    }, v => {
+        const labelMap = { 'air-ground': 'Air & Ground', 'ground': 'Ground', 'buildings': 'Buildings', 'none': 'None' };
+        return `🎯 Target: ${labelMap[v] || v}`;
+    });
     // Is Swarm
     setupFilter('swarmFilter', v => (c => v === 'yes' ? SWARM_CARDS.has(c.name) : !SWARM_CARDS.has(c.name)), v => `👥 Swarm: ${v === 'yes' ? 'Yes' : 'No'}`);
     // Is Tank
     setupFilter('tankFilter', v => (c => v === 'yes' ? TANK_CARDS.has(c.name) : !TANK_CARDS.has(c.name)), v => `🛡️ Tank: ${v === 'yes' ? 'Yes' : 'No'}`);
     // Is Spawner
     setupFilter('spawnerFilter', v => (c => v === 'yes' ? SPAWNER_CARDS.has(c.name) : !SPAWNER_CARDS.has(c.name)), v => `🏗️ Spawner: ${v === 'yes' ? 'Yes' : 'No'}`);
+    // Is Win-Con
+    setupFilter('winconFilter', v => (c => v === 'yes' ? WIN_CON_CARDS.has(c.name) : !WIN_CON_CARDS.has(c.name)), v => `🏰 Win-Con: ${v === 'yes' ? 'Yes' : 'No'}`);
+    // Can Hit Air
+    setupFilter('airFilter', v => (c => v === 'yes' ? (c.target === 'Air & Ground') : (c.target !== 'Air & Ground')), v => `🏹 Hits Air: ${v === 'yes' ? 'Yes' : 'No'}`);
     // Has Evolution
     setupFilter('evoFilter', v => (c => v === 'yes' ? c.hasEvo : !c.hasEvo), v => `⚡ Evolution: ${v === 'yes' ? 'Yes' : 'No'}`);
     // Has Hero Skin
