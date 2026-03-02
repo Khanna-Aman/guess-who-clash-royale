@@ -51,7 +51,21 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const core = require('@actions/core');
+
+// ── Lightweight replacement for @actions/core.setOutput ───────────────────────
+// Writes to $GITHUB_OUTPUT file (modern GH Actions mechanism).
+// Falls back to the deprecated ::set-output command, then to a no-op for local runs.
+function setActionOutput(name, value) {
+    const outputFile = process.env.GITHUB_OUTPUT;
+    if (outputFile) {
+        fs.appendFileSync(outputFile, `${name}=${value}\n`);
+    } else if (process.env.GITHUB_ACTIONS) {
+        // Legacy fallback (pre-2022 runners)
+        process.stdout.write(`::set-output name=${name}::${value}\n`);
+    } else {
+        console.log(`[local] output ${name}=${value}`);
+    }
+}
 
 // ── Local dev: load .env from repo root if not running inside GitHub Actions ──
 // On GitHub Actions, GEMINI_API_KEY is injected via secrets — no .env needed.
@@ -680,7 +694,7 @@ async function checkForNewEvolutions(knownNames) {
 
         // ── Report result ─────────────────────────────────────────────────────
         const anyChanged = r1 || r2 || r3;
-        core.setOutput('files_changed', anyChanged ? 'true' : 'false');
+        setActionOutput('files_changed', anyChanged ? 'true' : 'false');
 
         console.log('\n═══════════════════════════════════════════════════════════');
         if (anyChanged) {
@@ -695,7 +709,7 @@ async function checkForNewEvolutions(knownNames) {
 
     } catch (err) {
         console.error('\n❌ Pipeline error:', err.message);
-        core.setOutput('files_changed', 'false');
+        setActionOutput('files_changed', 'false');
         process.exit(0); // Always exit 0 — never hard-fail the workflow
     }
 })();

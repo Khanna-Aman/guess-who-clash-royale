@@ -6,7 +6,5 @@
   "scripts": {
     "check-cards": "node check-new-cards.js"
   },
-  "dependencies": {
-    "@actions/core": "3.0.0"
-  }
+  "dependencies": {}
 }
