@@ -23,8 +23,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
-const CARDS_JS = path.join(ROOT, 'cards.js');
-const CARDS_JSON = path.join(ROOT, 'CARDS_DATA.json');
+const CARDS_JS = path.join(ROOT, 'js', 'cards.js');
+const CARDS_JSON = path.join(ROOT, 'data', 'CARDS_DATA.json');
 
 // ── Step 1: Extract all card entries from cards.js ───────────────────────────
 const jsSrc = fs.readFileSync(CARDS_JS, 'utf8');

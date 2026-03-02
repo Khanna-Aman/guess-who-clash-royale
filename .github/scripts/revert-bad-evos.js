@@ -11,8 +11,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
-const CARDS_JS = path.join(ROOT, 'cards.js');
-const CARDS_JSON = path.join(ROOT, 'CARDS_DATA.json');
+const CARDS_JS = path.join(ROOT, 'js', 'cards.js');
+const CARDS_JSON = path.join(ROOT, 'data', 'CARDS_DATA.json');
 
 // Authoritative list of all 39 card evolutions as of February 2026
 const REAL_EVO_CARDS = new Set([
