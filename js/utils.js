@@ -23,6 +23,30 @@ function toSlug(name) {
         .replace(/,/g, '');
 }
 
+/**
+ * Escape a string for safe insertion into HTML text / attribute contexts.
+ * Card names flow from an LLM-fed data pipeline, so never trust them raw.
+ */
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Flip a card element on/off, keeping the visual `flipped` class and the
+ * `aria-pressed` state in sync for keyboard / screen-reader users.
+ * `flipped === true` means the card is eliminated (turned face-down).
+ */
+function setCardFlipped(el, flipped) {
+    if (!el) return;
+    el.classList.toggle('flipped', flipped);
+    el.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+}
+
 function getCardImg(name) {
     let slug = toSlug(name);
     if (SLUG_OVERRIDES[slug]) slug = SLUG_OVERRIDES[slug];

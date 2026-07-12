@@ -287,6 +287,26 @@ async function callGemini(promptText, modelIdx = 0, attempt = 1) {
     return JSON.parse(raw.replace(/```json|```/g, '').trim());
 }
 
+/**
+ * Validate & normalize the semantic object returned by Gemini before it is
+ * allowed to patch source files. Throws on hard failures (so the caller skips
+ * the card); coerces soft/boolean fields to safe defaults.
+ */
+function validateGeminiCardInfo(info, cardName) {
+    if (!info || typeof info !== 'object' || Array.isArray(info)) {
+        throw new Error(`Gemini returned a non-object for "${cardName}": ${JSON.stringify(info)}`);
+    }
+    if (typeof info.isPermanent !== 'boolean') {
+        throw new Error(`Gemini response for "${cardName}" missing boolean "isPermanent": ${JSON.stringify(info)}`);
+    }
+    const BOOL_FIELDS = ['flying', 'isGoblin', 'isUndead', 'isMan', 'isHuman', 'isSwarm', 'isTank', 'isSpawner'];
+    for (const f of BOOL_FIELDS) {
+        if (typeof info[f] !== 'boolean') info[f] = false; // safe default — never invents a flag
+    }
+    if (typeof info.target !== 'string' || !info.target.trim()) info.target = 'ground';
+    return info;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // CDN PROBES
 // ═════════════════════════════════════════════════════════════════════════════
@@ -542,7 +562,7 @@ Return ONLY a JSON object:
 If isPermanent is false, you may set all other fields to safe defaults.
 `.trim();
 
-            const geminiInfo = await callGemini(prompt);
+            const geminiInfo = validateGeminiCardInfo(await callGemini(prompt), card.name);
 
             if (!geminiInfo.isPermanent) {
                 console.log(`    ⏭️  Gemini: event/seasonal card — skipping "${card.name}".`);

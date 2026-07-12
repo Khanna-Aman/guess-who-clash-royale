@@ -8,8 +8,7 @@ function toggleCard(i) {
     const wasActive = state.board[i];
     state.history.push({ type: 'flip', index: i, prevState: wasActive });
     state.board[i] = !wasActive;
-    const el = document.getElementById(`card-${i}`);
-    if (el) el.classList.toggle('flipped', !state.board[i]);
+    setCardFlipped(document.getElementById(`card-${i}`), !state.board[i]);
     updateActiveCount();
 }
 
@@ -32,12 +31,16 @@ function applyFilter(matchFn, player, label) {
 
     state.history.push({ type: 'filter', indices: flippedIndices, prevStates });
 
-    let delay = 0;
-    flippedIndices.forEach(idx => {
-        delay += 12;
+    // Stagger the flip animation, but cap total duration (~360ms) so a filter
+    // that eliminates many cards doesn't lag ~1.5s behind the score/log update.
+    const MAX_STAGGER = 360;
+    const step = Math.min(12, MAX_STAGGER / flippedIndices.length);
+    let maxDelay = 0;
+    flippedIndices.forEach((idx, k) => {
+        const delay = (k + 1) * step;
+        maxDelay = delay;
         setTimeout(() => {
-            const el = document.getElementById(`card-${idx}`);
-            if (el) el.classList.add('flipped');
+            setCardFlipped(document.getElementById(`card-${idx}`), true);
         }, delay);
     });
 
@@ -50,7 +53,7 @@ function applyFilter(matchFn, player, label) {
     state.questionLog.push({ label, eliminated, activeAfter: active, isManual: false });
     renderQuestionLog();
     adjustScore(player, 1);
-    setTimeout(() => updateActiveCount(), delay + 20);
+    setTimeout(() => updateActiveCount(), maxDelay + 20);
 }
 
 function setupFilter(id, fnBuilder, labelFn) {

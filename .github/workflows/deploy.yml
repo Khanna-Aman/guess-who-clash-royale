@@ -53,7 +53,7 @@ jobs:
       - name: 📦 Collect site files
         run: |
           mkdir -p _site
-          cp index.html robots.txt _site/
+          cp index.html robots.txt sitemap.xml _site/
           cp -r css js data docs _site/
 
       - name: 📦 Upload artifact

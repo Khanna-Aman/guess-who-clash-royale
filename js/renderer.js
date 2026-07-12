@@ -87,15 +87,18 @@ function showPickScreen(player) {
             div.dataset.idx = origIdx;
 
             const imgSrc = getCardImg(card.name);
+            const safeName = escapeHtml(card.name);
             div.innerHTML = `
                 <div class="picker-elixir">${card.elixir === 0 ? '?' : card.elixir}</div>
-                ${imgSrc ? `<img src="${imgSrc}" alt="${card.name}" onerror="handleCardImgError(this, '${card.name}')">` : ''}
-                <div class="picker-name">${card.name}</div>
+                ${imgSrc ? `<img src="${imgSrc}" alt="${safeName}">` : ''}
+                <div class="picker-name">${safeName}</div>
                 <div class="picker-badges">
                     ${card.hasEvo ? '<span class="badge-evo"  title="Has Evolution">⚡</span>' : ''}
                     ${card.hasHero ? '<span class="badge-hero" title="Has Hero Skin">🦸</span>' : ''}
                 </div>
             `;
+            const pImg = imgSrc ? div.querySelector('img') : null;
+            if (pImg) pImg.onerror = () => handleCardImgError(pImg, card.name);
 
             div.onclick = () => {
                 grid.querySelectorAll('.picker-card').forEach(c => c.classList.remove('selected'));
@@ -175,20 +178,26 @@ function renderBoard() {
     const displayIndices = getSortedCardIndices();
     displayIndices.forEach((i, pos) => {
         const card = CARDS[i];
+        const safeName = escapeHtml(card.name);
         const rarityClass = `rarity-${card.rarity.toLowerCase()}`;
         const isFlipped = !state.board[i];
-        const container = document.createElement('div');
+        const container = document.createElement('button');
+        container.type = 'button';
         container.className = `card-container ${rarityClass} ${isFlipped ? 'flipped' : ''} animate-in`;
         container.style.animationDelay = `${pos * 5}ms`;
         container.id = `card-${i}`;
+        container.setAttribute('aria-pressed', isFlipped ? 'true' : 'false');
+        container.setAttribute('aria-label', card.name);
         container.onclick = () => toggleCard(i);
         const imgSrc = getCardImg(card.name);
-        const imgTag = imgSrc ? `<img src="${imgSrc}" alt="${card.name}" loading="lazy" onerror="handleCardImgError(this, '${card.name}')">` : `<img class="img-error" alt="${card.name}">`;
+        const imgTag = imgSrc ? `<img src="${imgSrc}" alt="${safeName}" loading="lazy">` : `<img class="img-error" alt="${safeName}">`;
         const badges = [];
         if (card.hasEvo) badges.push(`<span class="card-badge badge-evo"  title="Has Evolution">⚡</span>`);
         if (card.hasHero) badges.push(`<span class="card-badge badge-hero" title="Has Hero Skin">🦸</span>`);
         container.setAttribute('title', card.name);
-        container.innerHTML = `<div class="card-inner"><div class="card-front"><div class="elixir-badge">${card.elixir === 0 ? '?' : card.elixir}</div><div class="card-img-wrap">${imgTag}<div class="img-fallback">${card.name}</div></div><div class="card-name">${card.name}</div><div class="card-badges-row">${badges.join('')}</div></div><div class="card-back"></div></div>`;
+        container.innerHTML = `<div class="card-inner"><div class="card-front"><div class="elixir-badge">${card.elixir === 0 ? '?' : card.elixir}</div><div class="card-img-wrap">${imgTag}<div class="img-fallback">${safeName}</div></div><div class="card-name">${safeName}</div><div class="card-badges-row">${badges.join('')}</div></div><div class="card-back"></div></div>`;
+        const img = container.querySelector('img[src]');
+        if (img) img.onerror = () => handleCardImgError(img, card.name);
         board.appendChild(container);
     });
     updateActiveCount();
@@ -206,10 +215,12 @@ function renderBoard() {
             </div>
             <div class="secret-reveal">
                 <div class="secret-hint-text">Opponent's Target</div>
-                <img src="${getCardImg(secret.name)}" alt="${secret.name}" onerror="handleCardImgError(this, '${secret.name}')">
-                <div class="secret-name-text">${secret.name}</div>
+                <img src="${getCardImg(secret.name)}" alt="${escapeHtml(secret.name)}">
+                <div class="secret-name-text">${escapeHtml(secret.name)}</div>
             </div>
         `;
+        const secretImg = slot.querySelector('.secret-reveal img');
+        if (secretImg) secretImg.onerror = () => handleCardImgError(secretImg, secret.name);
         const btnHold = document.getElementById('btnHoldView');
         if (btnHold) {
             btnHold.onmousedown = btnHold.ontouchstart = () => slot.classList.add('revealed');
@@ -230,7 +241,10 @@ function renderQuestionLog() {
         [...state.questionLog].reverse().forEach(entry => {
             const item = document.createElement('div');
             item.className = `q-log-item animate-in ${entry.isManual ? 'manual' : ''}`;
-            item.innerHTML = `<div class="q-log-header"><span>${entry.label}</span><span class="q-log-outcome">(-${entry.eliminated})</span></div><div class="q-log-footer">${entry.activeAfter} cards remaining</div>`;
+            // Manual/verbal entries eliminate no cards via the engine, so a
+            // "(-0)" badge is misleading — label them "(verbal)" instead.
+            const outcome = entry.isManual ? 'verbal' : `-${entry.eliminated}`;
+            item.innerHTML = `<div class="q-log-header"><span>${escapeHtml(entry.label)}</span><span class="q-log-outcome">(${outcome})</span></div><div class="q-log-footer">${entry.activeAfter} cards remaining</div>`;
             list.appendChild(item);
         });
     }
@@ -298,11 +312,33 @@ function wireBoardControls() {
         modal.classList.add('show');
         input.focus();
 
-        cancel.onclick = () => modal.classList.remove('show');
+        // Close the modal, restore focus to the trigger, and detach the trap.
+        const closeModal = () => {
+            modal.classList.remove('show');
+            modal.onkeydown = null;
+            btnGuess.focus();
+        };
+
+        // Keyboard support: Enter submits (when a valid guess is entered),
+        // Escape cancels, and Tab is trapped within the modal.
+        modal.onkeydown = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); cancel.onclick(); return; }
+            if (e.key === 'Enter' && !confirm.disabled && document.activeElement !== cancel) {
+                e.preventDefault(); confirm.onclick(); return;
+            }
+            if (e.key === 'Tab') {
+                const focusables = [input, confirm, cancel].filter(el => !el.disabled);
+                const first = focusables[0], last = focusables[focusables.length - 1];
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        };
+
+        cancel.onclick = () => closeModal();
         confirm.onclick = () => {
             const val = input.value.trim().toLowerCase();
             if (val === secret.name.toLowerCase()) {
-                modal.classList.remove('show');
+                closeModal();
                 if (state.currentPlayer === 1) {
                     showPassScreen(2, '🔍', '▶ I’m Player 2 — Start My Turn!', () => setPhase(GamePhase.GUESS_P2), false);
                 } else {
@@ -311,7 +347,7 @@ function wireBoardControls() {
             } else {
                 showToast("Wrong guess! +1 question added.", "warn");
                 adjustScore(state.currentPlayer, 1);
-                modal.classList.remove('show');
+                closeModal();
                 // Track progression for the missed guess
                 const active = state.board.filter(Boolean).length;
                 const prog = state.currentPlayer === 1 ? state.progressionP1 : state.progressionP2;
@@ -367,10 +403,18 @@ function showResults() {
     renderProgressionGraph();
     renderStats();
 
+    // Play Again → straight into a fresh match (skip the menu).
     const btnPlayAgain = document.getElementById('btnPlayAgain');
-    if (btnPlayAgain) btnPlayAgain.onclick = () => location.reload();
+    if (btnPlayAgain) btnPlayAgain.onclick = () => {
+        newGame();
+        showPassScreen(1, '🎴', "▶ I'm Player 1 — Start Picking!", () => setPhase(GamePhase.PICK_P1));
+    };
+    // Menu → back to the start screen (smooth, no full reload).
     const btnMenu = document.getElementById('btnBackToMenu');
-    if (btnMenu) btnMenu.onclick = () => location.reload();
+    if (btnMenu) btnMenu.onclick = () => {
+        newGame();
+        showScreen('startScreen');
+    };
 }
 
 function renderProgressionGraph() {
