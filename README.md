@@ -99,13 +99,12 @@ guess-who-clash-royale/
 ├── .github/
 │   ├── workflows/
 │   │   ├── deploy.yml          # Auto-deploy to GitHub Pages on every push to main
-│   │   └── check-cards.yml     # Weekly cron: auto-detects & patches new CR cards
+│   │   └── check-cards.yml     # Weekly cron: refreshes hero/evo + alerts on stale source (see note)
 │   ├── scripts/
 │   │   └── check-new-cards.js  # Node pipeline: new cards + hero skins + evo refresh
 ...
 ├── docs/
 │   └── assets/             # Banner image and demo media
-├── CHANGELOG.md            # Version history
 ├── CONTRIBUTING.md         # Card schema + steps to add / fix cards
 ├── SECURITY.md             # Vulnerability disclosure policy
 └── LICENSE                 # MIT
@@ -182,7 +181,7 @@ Runs **every Monday at 08:00 UTC** (the day after typical CR patch days). Perfor
 | ② Hero skin refresh | CDN HEAD probe for every card without a hero skin | Free — no auth |
 | ③ Evolution refresh | 1 Gemini call for ALL cards without an evo to check if any now have one | 1 Gemini call total |
 
-If any changes are detected, the script **automatically patches `cards.js`, `CARDS_DATA.json`, `cards-annotations.js`, and `config-filters.js`** and commits them back to `main` — triggering a fresh GitHub Pages deploy.
+If any changes are detected, the script **automatically patches `cards.js`, `CARDS_DATA.json`, `cards-annotations.js`, and `config-filters.js`**, then **opens a PR and enables auto-merge** — it never pushes directly to the branch-protected `main`. Once the `Test` check passes, the PR squash-merges and a fresh GitHub Pages deploy is triggered.
 
 > **Cost: $0 — free tier only, enforced three ways.**
 > 1. **Model chain is free-tier only.** Any model that would require billing returns `429 limit: 0` and is **skipped, never called** — the pipeline never falls back to a paid model.

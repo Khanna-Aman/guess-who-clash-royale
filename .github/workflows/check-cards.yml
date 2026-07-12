@@ -1,25 +1,30 @@
 name: 🃏 Auto-Update Clash Royale Cards
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FULLY AUTOMATED — no human action required.
+# Weekly card-data refresh. Runs every Monday 08:00 UTC (and on demand).
 #
-# The pipeline runs every Monday at 08:00 UTC. When new cards, hero skins, or
-# evolutions are detected, it patches the card data files and commits directly
-# to main. That commit then triggers deploy.yml, which republishes GitHub Pages.
+# When hero skins / evolutions change (or a new card is found), it opens a PR
+# and enables auto-merge; the PR's Test check must pass before it squash-merges
+# into the branch-protected main, which then triggers deploy.yml.
 #
-# Full auto-chain:
+# Auto-chain (only when something actually changes):
 #   schedule (Mon 08:00 UTC)
-#     → check-new-cards.js  (Gemini + CDN probes)
-#       → git commit & push to main  (if anything changed)
-#         → deploy.yml fires  (push-to-main trigger)
-#           → GitHub Pages updated  ✅  zero human intervention
+#     → check-new-cards.js  (Gemini key check + CDN probes + Gemini classify)
+#       → open PR + enable auto-merge  (if anything changed)
+#         → Test check passes → squash-merge to main
+#           → deploy.yml fires → GitHub Pages updated
 #
-# HOW TO TEST MANUALLY (no need to wait for Monday):
-#   GitHub → Actions tab → "🃏 Auto-Update Clash Royale Cards" → Run workflow
+# ⚠️ KNOWN LIMITATION — new-card detection (Check ①) is currently blind because
+#    the upstream source (cr-api-data) is frozen behind the live game. Hero/evo
+#    refresh still works. New cards must be added manually (see CONTRIBUTING.md)
+#    until ROYALE_URL in check-new-cards.js points at a maintained source.
 #
-# FAILURE NOTIFICATIONS:
-#   • GitHub emails you automatically on any workflow failure (repo owner)
-#   • If the pipeline step itself errors, a GitHub Issue is auto-created
+# HOW TO RUN MANUALLY:  Actions tab → this workflow → "Run workflow".
+#
+# SELF-ALERTS (auto-filed as deduplicated GitHub issues + owner email):
+#   • Any step errors           → "pipeline-failure" issue
+#   • Gemini key invalid/expired → "gemini-key-invalid" issue
+#   • Upstream source is stale   → "data-source-stale" issue
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
@@ -32,7 +37,7 @@ permissions:
   pull-requests: write   # Open + auto-merge the card-update PR
   issues:        write   # Open failure / stale-source / invalid-key issues
 
-# Never let two card-update runs overlap (they both push to main)
+# Never let two card-update runs overlap (they both open PRs against main)
 concurrency:
   group: card-update
   cancel-in-progress: false

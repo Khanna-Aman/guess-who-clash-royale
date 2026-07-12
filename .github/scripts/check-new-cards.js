@@ -1,11 +1,17 @@
 /**
  * check-new-cards.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Fully-automated Clash Royale card update pipeline.
+ * Weekly Clash Royale card-data refresh pipeline.
+ *
+ * ⚠️ KNOWN LIMITATION: Check ① (new cards) is currently BLIND because the
+ *    upstream source (ROYALE_URL / cr-api-data) is frozen behind the live game.
+ *    The run detects this and emits `source_stale` → a `data-source-stale` issue.
+ *    Checks ② (hero) and ③ (evo) still work. New cards must be added manually
+ *    until ROYALE_URL points at a maintained source.
  *
  * WHAT IT DOES — three checks, every Monday:
  *
- *  ① NEW CARD CHECK
+ *  ① NEW CARD CHECK  (see limitation above)
  *     - Fetches latest card list from RoyaleAPI open-data
  *     - Diffs against cards.js to find brand-new cards
  *     - For each new card:
