@@ -12,7 +12,7 @@ Built entirely with vanilla HTML, CSS, and JavaScript. No frameworks. No build s
 [![Play Online](https://img.shields.io/badge/🎮%20Play%20Now-GitHub%20Pages-blue?style=for-the-badge&logo=github)](https://Khanna-Aman.github.io/guess-who-clash-royale/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 [![Cards](https://img.shields.io/badge/Cards-121-purple?style=for-the-badge)](./js/cards.js)
-[![Cards](https://img.shields.io/badge/Data-Manually%20Curated-orange?style=for-the-badge&logo=github)](./js/cards.js)
+[![Auto-Checked](https://img.shields.io/badge/Data-Auto--Checked%20Weekly-brightgreen?style=for-the-badge&logo=github-actions)](./.github/workflows/check-cards.yml)
 
 </div>
 
@@ -123,7 +123,7 @@ guess-who-clash-royale/
 | **Font** | [Outfit](https://fonts.google.com/specimen/Outfit) via Google Fonts | 400 → 900 weights |
 | **Card Images** | [RoyaleAPI CDN](https://royaleapi.github.io/cr-api-assets/) | Auto-resolved from card name slug |
 | **Graph** | Canvas API | HiDPI-aware (`devicePixelRatio`) progression chart |
-| **CI/CD** | GitHub Actions | Test-gated auto-deploy + a weekly card-update pipeline (currently paused — see GitHub Actions section) |
+| **CI/CD** | GitHub Actions | Test-gated auto-deploy + a weekly card-update pipeline (runs; new-card check blocked by a frozen upstream — see GitHub Actions section) |
 
 ---
 
@@ -152,7 +152,7 @@ Card data is split across three files for clarity of ownership:
 
 | File | Contains | Updated by |
 |---|---|---|
-| `js/cards.js` | Core facts: `name`, `elixir`, `rarity`, `type`, `target`, `flying`, `hasEvo` | Manually curated (auto-update pipeline exists but is currently paused — see note below) |
+| `js/cards.js` | Core facts: `name`, `elixir`, `rarity`, `type`, `target`, `flying`, `hasEvo` | Weekly auto-check (hero/evo); new cards added manually while the upstream source is frozen — see note below |
 | `js/cards-annotations.js` | Manual layer: `hasHero`, `isGoblin`, `isUndead`, `isMan`, `isHuman` | Human — no API exists for these |
 | `js/config-filters.js` | Role sets: `SWARM_CARDS`, `TANK_CARDS`, `SPAWNER_CARDS` | Human — community meta classifications |
 | `data/CARDS_DATA.json` | Human-readable mirror of `cards.js` | Reference only |
@@ -168,13 +168,13 @@ Triggers on every push to `main`. Publishes the root directory to GitHub Pages u
 
 ### 🃏 Auto Card Update (`check-cards.yml`)
 
-> ⚠️ **Status: currently paused / not self-sustaining.** This pipeline is fully built but is **not reliably keeping data current**, for two reasons:
-> 1. **Scheduled workflows are auto-disabled after 60 days of repo inactivity** by GitHub, so the Monday cron stops firing during quiet periods. Re-enable it in the **Actions** tab (or keep the repo active).
-> 2. Its upstream source — [`royaleapi/cr-api-data`](https://github.com/RoyaleAPI/cr-api-data) — appears **frozen**: it is missing several permanent cards this game already ships, so new-card detection can't surface them. A maintained data source is needed to fully revive check ①. (Checks ② and ③ probe the live CDN and still work when the workflow runs.)
+> ⚠️ **Status: running weekly, but new-card detection has a blind spot.** The workflow fires every Monday and completes successfully (verified: 12+ consecutive green scheduled runs). It has simply had nothing to commit since its one update on 2026-03-09, because:
+> - **Check ① (new cards) is blind.** Its upstream source — [`royaleapi/cr-api-data`](https://github.com/RoyaleAPI/cr-api-data) — is **frozen**: it lists fewer cards than this game already ships (missing several permanent cards), so a genuinely new card can't be diffed in. **A maintained data source is needed** for new-card detection to work. Newly released cards must be added manually until then.
+> - **Checks ② and ③ (hero / evo refresh) work** — they probe the live CDN — but currently find nothing new to flip.
 >
-> Until revived, **card data is maintained manually.** The design below documents the intended automation.
+> Net: the automation is healthy; the **data source feeding new-card detection is stale.** Swapping it is the fix.
 
-Designed to run **every Monday at 08:00 UTC** (the day after typical CR patch days). Performs three automated checks:
+Runs **every Monday at 08:00 UTC** (the day after typical CR patch days). Performs three automated checks:
 
 | Check | What it does | API cost |
 |---|---|---|

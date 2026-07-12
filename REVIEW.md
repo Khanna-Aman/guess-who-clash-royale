@@ -19,21 +19,21 @@ A genuinely polished, zero-dependency fan game with production-grade automation 
 | 2 | 🧱 Code Quality & Architecture | **7.0 / 10** | 14% | 0.98 |
 | 3 | ✅ Correctness & Reliability | **6.5 / 10** | 14% | 0.91 |
 | 4 | 🎨 UI / UX | **8.0 / 10** | 12% | 0.96 |
-| 5 | 🧪 Testing & CI/CD | **4.0 / 10** | 14% | 0.56 |
-| 6 | 📚 Documentation | **7.5 / 10** | 8% | 0.60 |
+| 5 | 🧪 Testing & CI/CD | **5.5 / 10** | 14% | 0.77 |
+| 6 | 📚 Documentation | **8.0 / 10** | 8% | 0.64 |
 | 7 | ⚡ Performance | **7.5 / 10** | 7% | 0.53 |
 | 8 | ♿ Accessibility | **6.0 / 10** | 7% | 0.42 |
 | 9 | 🔒 Security & Legal | **7.5 / 10** | 9% | 0.68 |
-| | **TOTAL** | | **100%** | **≈ 7.3** |
+| | **TOTAL** | | **100%** | **≈ 7.1** |
 
-> **Score revised down from an initial 7.6:** the flagship "auto-updates weekly" pipeline is, on inspection, non-functional (see **C0**). This pulls CI/CD and Documentation down, since a headline feature does not work and the README/badge assert otherwise.
+> **Note on C0:** an earlier draft scored CI/CD 4.0 believing the auto-update pipeline was dead. The Actions history proved otherwise — it runs weekly and succeeds; the real issue is a new-card *blind spot* from a frozen upstream source (see **C0**). Scores corrected accordingly. Testing & CI/CD still sits at 5.5 because, as audited, the test suite was gitignored and un-gated (both fixed in the follow-up branch).
 
 **Verification performed for this audit**
-- ✅ `node --test tests-internal/logic.test.js` → 4 pass / 0 fail
+- ✅ `node --test tests-internal/` → 8 pass / 0 fail (suite expanded during the audit)
 - ✅ Card counts consistent: `cards.js` = 121, `CARDS_DATA.json` = 121
 - ✅ `.env` is **not** tracked and **not** in git history (`.gitignore` covers it)
 - ✅ Confirmed dead code and missing handlers via static grep
-- ✅ **Live-probed the automation pipeline:** `github-actions[bot]` committed **once (2026-03-09)** then went dormant (~4 months idle as of this review); upstream data source (`cr-api-data`) is **frozen at 120 cards, missing 12 the game already has**; CDN evo/hero probe conventions still return `200`; **0** currently-missed evolutions
+- ✅ **Live-probed the automation pipeline (Actions API):** `check-cards.yml` has **12+ consecutive green weekly runs** (2026-04-20 → 07-06); `github-actions[bot]` committed once (2026-03-09) and every run since is a successful no-op; upstream data source (`cr-api-data`) is **frozen at 120 cards, missing 12 the game already has**; CDN evo/hero probe conventions still return `200`; **0** currently-missed evolutions
 
 ---
 
@@ -41,24 +41,25 @@ A genuinely polished, zero-dependency fan game with production-grade automation 
 
 These are the findings that most affect a real player or a production deploy. Several were **not** caught in prior reviews.
 
-### C0 — The flagship "auto-updates weekly" pipeline is non-functional *(CI/CD, CRITICAL)*
+### C0 — The auto-update pipeline runs weekly but is blind to new cards *(CI/CD, HIGH)*
 
-The README, a status badge, and `check-cards.yml`'s header all advertise a "fully automated, zero-human-intervention" weekly pipeline that detects new cards / hero skins / evolutions and commits them back to `main`. **In practice it is not self-sustaining** — it ran once at the start and then went dormant. This was verified live, not read from the YAML:
+The README badge advertises "Auto-Updated Weekly." The mechanism **does run weekly and succeeds** — but it hasn't produced a data change since March because its new-card data source is frozen. This is the user-reported symptom ("hero/evo detection seems dead, nothing updated in months, new cards not accounted for"), and the real cause is narrower than a dead workflow.
 
-**Evidence**
-1. **The bot committed exactly once, then stopped.** `github-actions[bot]` made a single auto-update commit on **2026-03-09** (one week after repo creation) — mostly a `CARDS_DATA.json` re-serialization plus a 4-line touch to `cards.js`/`cards-annotations.js`. It has not committed since (~4 months idle as of this review), despite a weekly cron. (Note: an earlier draft of this review said "zero bot commits" — that was read off a stale local clone that was 15 commits behind `origin/main`; corrected here.)
-2. **The cron is dormant.** Last human commit: `2026-03-02`. GitHub **automatically disables scheduled workflows after 60 days of no repository activity**, so the Monday cron has almost certainly not fired since ~early May 2026.
-3. **The upstream data source is frozen — the real root cause.** New-card detection diffs local data against `https://royaleapi.github.io/cr-api-data/json/cards.json`. Fetched live, that source returns **120 cards and is already missing 12 permanent cards the game ships**: `Berserker, Suspicious Bush, Goblin Curse, Vines, Void, Little Prince, Goblin Demolisher, Rune Giant, Goblin Machine, Goblinstein, Spirit Empress, Boss Bandit`. Diffing against a frozen upstream can **never** surface a genuinely new card — so new-card detection is structurally dead even if the cron fired perfectly. (The upstream's event-only cards — Super Witch, Terry, Party Hut, etc. — are correctly excluded by the blocklist, so that part works.)
-4. **The detection *logic* is actually fine**, which is why the rot is invisible. The CDN probe conventions still resolve: `knight-ev1.png` and `knight-hero.png` both return `200`. A full sweep of all 82 locally-"no-evo" cards against the CDN found **0 missed evolutions** — the data happens to be current today.
+> **Correction from earlier drafts of this review.** My first pass claimed "zero bot commits / cron dormant / auto-disabled after 60 days." That was wrong — it was read off a **stale local clone 15 commits behind `origin/main`**. The Actions history disproves it: see evidence #1–2. This entry is the corrected version.
 
-**Net:** the automation is dead on two independent axes (dormant cron + frozen source), but causes no *visible* damage yet because the data is coincidentally up to date. The first real card or evolution Supercell ships after this point will be **silently missed**, and no failure issue will be raised because the workflow isn't running.
+**Evidence (verified against `origin/main` and the live Actions API)**
+1. **The scheduled workflow is healthy.** `check-cards.yml` has **12+ consecutive successful scheduled runs**, every Monday from 2026-04-20 through 2026-07-06. The cron is *not* disabled and *not* dormant.
+2. **The bot committed once, then had nothing to commit.** `github-actions[bot]` made one auto-update commit on **2026-03-09** (a `CARDS_DATA.json` re-serialization + a 4-line `cards.js`/annotations touch). Every weekly run since has been a successful **no-op** — it found nothing to add.
+3. **Check ① (new cards) is structurally blind — the real root cause.** New-card detection diffs local data against `https://royaleapi.github.io/cr-api-data/json/cards.json`. Fetched live, that source returns **120 cards and is already missing 12 permanent cards the game ships**: `Berserker, Suspicious Bush, Goblin Curse, Vines, Void, Little Prince, Goblin Demolisher, Rune Giant, Goblin Machine, Goblinstein, Spirit Empress, Boss Bandit`. Diffing against a frozen upstream can **never** surface a genuinely new card. (The upstream's event-only cards — Super Witch, Terry, Party Hut — are correctly excluded by the blocklist.)
+4. **Checks ② and ③ (hero / evo refresh) work but currently find nothing.** The CDN probe conventions still resolve (`knight-ev1.png`, `knight-hero.png` → `200`), and a full sweep of all 82 locally-"no-evo" cards found **0 missed evolutions**. So hero/evo detection is live, just with nothing new to flip today.
+
+**Net:** the automation is *running and green*, but new-card detection is a **silent blind spot** — the next card Supercell releases won't be auto-added because the upstream source that would reveal it is abandoned. The damage is latent, not active. The main sins are (a) a badge that implies the *data* changes weekly (it doesn't), and (b) a new-card path that can't ever fire.
 
 **Fix (in priority order)**
-1. **Correct the documentation now** — either fix the pipeline or stop advertising "auto-updated weekly" (README badge + `## 🤖 GitHub Actions` section + `data/` ownership table). Claiming a working automation that isn't is the most damaging part.
-2. **Re-enable the workflow** and add a keep-alive (the cron won't survive repo inactivity; either commit periodically or use a `workflow_dispatch` + external ping).
-3. **Replace / re-verify the data source.** `cr-api-data` appears abandoned; move to a maintained source (e.g. RoyaleAPI's live API, or scrape the CDN asset listing directly) or the "new card" branch is permanently blind.
-4. **Add an end-to-end smoke test** the pipeline runs in dry-run mode on every push, so a broken source URL or CDN convention change surfaces immediately instead of silently.
-5. **Confirm `GEMINI_API_KEY` is set as a repo secret** and check the Actions run history for red runs — the local `.env` key does not prove the CI secret exists.
+1. **Make the docs honest** (done in this branch) — the badge now reads "Auto-Checked Weekly" and the Actions section explains the frozen-source blind spot instead of implying weekly data changes.
+2. **Replace the new-card data source.** `cr-api-data` is behind the live game; move check ① to a maintained source (RoyaleAPI's live API, the CDN asset listing, or a scrape) or new-card detection stays permanently blind.
+3. **Add a dry-run smoke test** so a future source-URL or CDN-convention change surfaces as a red run instead of a silent no-op — a green run currently proves nothing about correctness.
+4. **Confirm `GEMINI_API_KEY` is set as a repo secret** (it is — the runs succeed; the new pre-commit validation gate also depends on it).
 
 ### C1 — State desynchronization on undo after "Custom +" or a wrong guess *(correctness, HIGH)*
 
@@ -151,10 +152,10 @@ The 4-row filter bar and right rail collapse poorly on tablets/phones; the READM
 ## ✅ What's genuinely strong
 
 - **Zero runtime dependencies.** Pure HTML/CSS/JS, runs on `file://`, fastest possible cold start.
-- **The automation is well-*engineered*, even though it's non-functional (C0).** `check-cards.yml` and `check-new-cards.js` show real care: pinned action SHAs, least-privilege `permissions`, `npm ci` with a committed lockfile, concurrency guard, model-fallback + 429 retry on the Gemini client, atomic multi-file flips with rollback, and de-duplicated failure issues. The craftsmanship is genuine — it just needs to actually run and point at a live data source.
+- **The automation is well-engineered and runs green weekly.** `check-cards.yml` and `check-new-cards.js` show real care: pinned action SHAs, least-privilege `permissions`, `npm ci` with a committed lockfile, concurrency guard, model-fallback + 429 retry on the Gemini client, atomic multi-file flips with rollback, and de-duplicated failure issues. The one gap (C0) is external — its new-card data source is frozen — not a defect in the pipeline itself.
 - **Clean file separation** across `state.js` / `filters.js` / `renderer.js` / `utils.js` / `game.js` / `config-filters.js` / `cards-annotations.js`, with a well-documented three-layer data model (`mergeCoreAndAnnotations`).
 - **High-fidelity UI** — authentic CR palette, Legendary rainbow shimmer, Champion gold-glow, staggered flip animations, active-count pill with colour transitions, HiDPI canvas progression graph, 8-metric stats table.
-- **Documentation is thorough and well-organized** — README covers features, scoring, structure, tech stack, design tokens, data architecture, and CI/CD. (Docked from "excellent" only because it asserts an auto-update pipeline that doesn't run — see C0 — and CONTRIBUTING.md has stale references.)
+- **Documentation is thorough and well-organized** — README covers features, scoring, structure, tech stack, design tokens, data architecture, and CI/CD. (Docked from "excellent" only because the "Auto-Updated Weekly" badge overstated what the pipeline actually changes — see C0 — and CONTRIBUTING.md had stale references; both corrected in the follow-up branch.)
 - **Multi-CDN image fallback** (4 CDNs × 7 slug variants) is robust against upstream asset churn.
 
 ---
@@ -174,7 +175,7 @@ Overall the legal posture is appropriately careful.
 
 | # | Action | Impact | Effort | Refs |
 |---|---|:---:|:---:|---|
-| 1 | **Fix the docs↔reality gap:** either revive the pipeline (re-enable cron + swap the frozen `cr-api-data` source + add a dry-run smoke test) **or** stop advertising "auto-updated weekly" in the README/badge | 🔴 Crit | 🟡 Med | C0 |
+| 1 | **Unblock new-card detection:** swap the frozen `cr-api-data` source for a maintained one + add a dry-run smoke test. (Docs↔reality gap already fixed: badge now "Auto-Checked Weekly".) | 🔴 High | 🟡 Med | C0 |
 | 2 | Push `manual` history entries from `+` and wrong-guess → fixes desync **and** activates dead undo branch | 🔴 High | 🟢 Low | C1, C2 |
 | 3 | Add `node --test` gate to `deploy.yml` and pre-commit in `check-cards.yml` | 🔴 High | 🟢 Low | C3 |
 | 4 | Rotate the Gemini key; confirm secret-only usage | 🔴 High | 🟢 Low | C4 |
@@ -186,4 +187,4 @@ Overall the legal posture is appropriately careful.
 | 10 | Remove dead `transitionModal`; fix `robots.txt` sitemap; fix `(-0)` log badge | 🟡 Low | 🟢 V.Low | L1, L3, L4 |
 | 11 | Add tests for `applyFilter`, `undoLast`, `undoFullQuestion`, `adjustScore`, `computeStats` | 🔴 High | 🟡 Med | C3 |
 
-**Bottom line:** an above-average, lovingly-built fan game whose two biggest problems are *invisible* today: a flagship auto-update pipeline that has never actually run (C0), and an undo/scoring desync that quietly corrupts the scoreboard mid-game (C1). Neither shows up in a quick demo, which is exactly why they survived. The path to 8.5+ is short and concrete — be honest about (or revive) the automation, fix the desync, gate deploys on the tests that already exist, and close the accessibility and key-hygiene items. The underlying craftsmanship is real; the gaps are in operational truth and edge-case correctness.
+**Bottom line:** an above-average, lovingly-built fan game whose two biggest problems are *invisible* today: an auto-update pipeline that runs green every week but is silently **blind to new cards** because its upstream source is frozen (C0), and an undo/scoring desync that quietly corrupts the scoreboard mid-game (C1). Neither shows up in a quick demo, which is exactly why they survived. The path to 8.5+ is short and concrete — point the pipeline at a live data source, fix the desync, gate deploys on the tests (done), and close the accessibility and key-hygiene items. The underlying craftsmanship is real; the gaps are in edge-case correctness and one stale external dependency.
