@@ -152,7 +152,7 @@ function escapeRegExp(str) {
 function fetchJson(url, redirects = 0) {
     if (redirects > 5) return Promise.reject(new Error(`Too many redirects for ${url}`));
     return new Promise((resolve, reject) => {
-        https.get(url, res => {
+        const req = https.get(url, res => {
             // Follow redirects (301 Moved Permanently, 302 Found, 307/308 Temporary/Permanent)
             if ((res.statusCode === 301 || res.statusCode === 302 ||
                 res.statusCode === 307 || res.statusCode === 308) && res.headers.location) {
@@ -171,7 +171,9 @@ function fetchJson(url, redirects = 0) {
                 try { resolve(JSON.parse(data)); }
                 catch (e) { reject(new Error(`JSON parse failed for ${url}: ${e.message}\nFirst 200 chars: ${data.slice(0, 200)}`)); }
             });
-        }).on('error', reject);
+        });
+        req.on('error', reject);
+        req.setTimeout(15000, () => req.destroy(new Error(`Request timeout for ${url}`)));
     });
 }
 
@@ -210,7 +212,33 @@ function postJson(url, payload, extraHeaders = {}) {
             });
         });
         req.on('error', reject);
+        req.setTimeout(30000, () => req.destroy(new Error('Gemini request timeout')));
         req.write(body);
+        req.end();
+    });
+}
+
+/**
+ * Lightweight key-validity probe — GETs the models list. Uses NO generation
+ * quota (it's a metadata GET), so it's free and safe to run every time.
+ * Returns { ok, status?, reason? }. Lets the pipeline self-verify the key and
+ * alert (rather than silently doing nothing) if the key is ever revoked/expired.
+ */
+function probeGeminiKey() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return Promise.resolve({ ok: false, reason: 'missing' });
+    return new Promise(resolve => {
+        const req = https.request({
+            hostname: 'generativelanguage.googleapis.com',
+            path: '/v1beta/models',
+            method: 'GET',
+            headers: { 'x-goog-api-key': apiKey },
+        }, res => {
+            res.resume();
+            resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode });
+        });
+        req.on('error', e => resolve({ ok: false, reason: e.message }));
+        req.setTimeout(10000, () => { req.destroy(); resolve({ ok: false, reason: 'timeout' }); });
         req.end();
     });
 }
@@ -720,6 +748,19 @@ async function checkForNewEvolutions(knownNames) {
             )),
         ]);
         console.log(`   API: ${apiCards.length} cards | Local: ${knownNames.size} cards\n`);
+
+        // ── Gemini key health check (free metadata GET — no generation quota) ──
+        // Self-verify the key every run so a revoked/expired key is caught early
+        // and alerted, rather than silently skipping AI checks forever.
+        const keyStatus = await probeGeminiKey();
+        if (keyStatus.ok) {
+            console.log('🔑 Gemini API key: valid ✅');
+        } else if (keyStatus.reason === 'missing') {
+            console.warn('🔑 Gemini API key: NOT SET — AI checks (① classify, ③ evo) will be skipped this run.');
+        } else {
+            console.error(`🔑 Gemini API key: INVALID / unreachable (${keyStatus.status || keyStatus.reason}). AI checks cannot run.`);
+            setActionOutput('gemini_key_invalid', 'true');
+        }
 
         // ── Data-source freshness guard (fixes the C0 "new-card blind spot") ───
         // The upstream RoyaleAPI open-data repo can freeze/lag behind the live

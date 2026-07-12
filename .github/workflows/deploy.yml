@@ -13,6 +13,7 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Least privilege — read the repo, write Pages, mint the deploy token
 permissions:
   contents: read
   pages: write
@@ -23,12 +24,15 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: ⚙️ Set up Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238  # v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
         with:
           node-version: '20'
 
@@ -39,6 +43,7 @@ jobs:
     name: Deploy
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -46,9 +51,11 @@ jobs:
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: ⚙️ Configure GitHub Pages
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6.0.0
 
       - name: 📦 Collect site files
         run: |
@@ -57,10 +64,10 @@ jobs:
           cp -r css js data docs _site/
 
       - name: 📦 Upload artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: '_site'
 
       - name: 🚀 Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128  # v5.0.0
