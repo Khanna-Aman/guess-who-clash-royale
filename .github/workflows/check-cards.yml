@@ -28,8 +28,9 @@ on:
 
 # Principle of least privilege
 permissions:
-  contents: write   # Required to commit patched card files back to main
-  issues:   write   # Required to open a failure-notification issue
+  contents:      write   # Push the auto-update branch
+  pull-requests: write   # Open + auto-merge the card-update PR
+  issues:        write   # Open failure / stale-source / invalid-key issues
 
 # Never let two card-update runs overlap (they both push to main)
 concurrency:
@@ -159,22 +160,36 @@ jobs:
               body, labels: [label],
             });
 
-      - name: 💾 Commit & push updated card files
+      # Open a PR (never a direct push to protected main) and enable auto-merge.
+      # The PR's required "Test" check must pass before GitHub squash-merges it,
+      # which then triggers deploy.yml. This keeps main fully branch-protected
+      # while remaining zero-touch.
+      - name: 🔀 Open auto-merge PR with updated card files
         if: steps.pipeline.outputs.files_changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          BRANCH="auto-update/cards-${{ github.run_id }}"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add js/cards.js data/CARDS_DATA.json js/cards-annotations.js js/config-filters.js
-          git diff --staged --quiet || git commit -m "🃏 auto-update: new CR cards added by pipeline"
-          git push
-          # NOTE: This push intentionally triggers deploy.yml to redeploy GitHub Pages.
+          if git diff --staged --quiet; then echo "No staged changes — nothing to do."; exit 0; fi
+          git commit -m "🃏 auto-update: new CR cards added by pipeline"
+          git push -u origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "🃏 auto-update: new CR cards" \
+            --body "Automated card-data update from the weekly pipeline. Auto-merges once the **Test** check passes." \
+            --label "pipeline"
+          gh pr merge "$BRANCH" --auto --squash --delete-branch
 
       - name: ✅ Job Summary
         if: success()
         run: |
           if [ "${{ steps.pipeline.outputs.files_changed }}" = "true" ]; then
-            echo "### 🃏 New cards detected and committed!" >> $GITHUB_STEP_SUMMARY
-            echo "Deploy workflow will fire automatically to update GitHub Pages." >> $GITHUB_STEP_SUMMARY
+            echo "### 🃏 New cards detected — auto-merge PR opened" >> $GITHUB_STEP_SUMMARY
+            echo "It will merge automatically once the Test check passes, then deploy." >> $GITHUB_STEP_SUMMARY
           else
             echo "### ✅ No changes — card data is already up to date." >> $GITHUB_STEP_SUMMARY
           fi

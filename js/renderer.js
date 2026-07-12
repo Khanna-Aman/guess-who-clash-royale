@@ -231,6 +231,7 @@ function renderBoard() {
 
 function renderQuestionLog() {
     const logContainer = document.querySelector('.q-log-panel');
+    if (!logContainer) return;
     const existingList = logContainer.querySelector('.q-log-list');
     if (existingList) existingList.remove();
     const list = document.createElement('div');
