@@ -58,6 +58,18 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
+      # Validate the machine-patched data before it can be committed. If the
+      # pipeline produced broken JS/JSON or violated a data invariant, fail here
+      # so nothing is committed or deployed.
+      - name: ✅ Validate patched data (syntax + logic tests)
+        if: steps.pipeline.outputs.files_changed == 'true'
+        run: |
+          node -c js/cards.js
+          node -c js/cards-annotations.js
+          node -c js/config-filters.js
+          node -e "JSON.parse(require('fs').readFileSync('data/CARDS_DATA.json','utf8'))"
+          node --test tests-internal/
+
       - name: 💾 Commit & push updated card files
         if: steps.pipeline.outputs.files_changed == 'true'
         run: |

@@ -70,11 +70,15 @@ function showPickScreen(player) {
 
     let selected = null;
 
+    // Player 2 must not be able to pick the same secret card as Player 1.
+    const excludedName = player === 2 && state.secretP1 ? state.secretP1.name : null;
+
     function renderPickerCards(filter = '') {
         grid.innerHTML = '';
+        let pool = excludedName ? CARDS.filter(c => c.name !== excludedName) : CARDS;
         const filtered = filter
-            ? CARDS.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()))
-            : CARDS;
+            ? pool.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()))
+            : pool;
 
         filtered.forEach(card => {
             const origIdx = CARDS.indexOf(card);
@@ -308,10 +312,13 @@ function wireBoardControls() {
                 showToast("Wrong guess! +1 question added.", "warn");
                 adjustScore(state.currentPlayer, 1);
                 modal.classList.remove('show');
-                // Track progression for manual guess
+                // Track progression for the missed guess
                 const active = state.board.filter(Boolean).length;
                 const prog = state.currentPlayer === 1 ? state.progressionP1 : state.progressionP2;
                 prog.push(active);
+                // Record a 'manual' history entry (no card flips) so a missed guess
+                // is undoable and history stays aligned with progression/questionLog.
+                state.history.push({ type: 'manual', flips: [] });
                 state.questionLog.push({ label: '🎯 Guess: Miss', eliminated: 0, activeAfter: active, isManual: true });
                 renderQuestionLog();
             }

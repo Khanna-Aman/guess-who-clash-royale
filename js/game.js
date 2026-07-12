@@ -54,6 +54,10 @@ function init() {
             const prog = player === 1 ? state.progressionP1 : state.progressionP2;
             prog.push(active);
 
+            // Record a 'manual' history entry (no card flips) so this point is
+            // undoable and history stays length-aligned with progression/questionLog.
+            state.history.push({ type: 'manual', flips: [] });
+
             state.questionLog.push({
                 label: '❓ Custom',
                 eliminated: 0,
