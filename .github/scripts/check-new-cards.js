@@ -118,9 +118,9 @@ const GEMINI_MODELS = [
 
 // ── Free-tier safety cap ─────────────────────────────────────────────────────
 // Hard ceiling on Gemini API calls per run. Normal usage is ~1–4 calls/week.
-// Runaway guard: if a swapped data source ever returns hundreds of "new" cards
-// (1 call each), the run stops here instead of burning quota. Combined with a
-// no-billing project (see README), this guarantees $0 cost.
+// This is a runaway guard: if a swapped data source ever returns hundreds of
+// "new" cards (1 call each), the run stops here instead of burning quota.
+// Combined with a no-billing project (see README), this guarantees $0 cost.
 const MAX_GEMINI_CALLS = 20;
 let GEMINI_CALLS_MADE = 0;
 

@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - All card-name interpolation is HTML-escaped; image error handlers are attached via JS instead of inline `onerror` (removes an injection vector for LLM-sourced names).
 - Pipeline validates/normalizes the Gemini response before it can patch source files.
 - Added `.env.example`; verified no key ever entered git history.
+- **Free-tier-only enforcement** for the Gemini pipeline: billing-required models are skipped (never called), plus a hard per-run call cap (`MAX_GEMINI_CALLS = 20`) as a runaway guard. Documented the no-billing-project setup as the definitive $0 guarantee.
 
 ### ⚙️ CI/CD & Tooling
 - Test suite is now tracked (was gitignored) and gated: `deploy.yml` runs `node --test` before shipping; a new `tests.yml` runs on every PR; `check-cards.yml` validates data before any auto-commit.

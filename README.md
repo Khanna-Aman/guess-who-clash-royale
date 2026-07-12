@@ -184,11 +184,14 @@ Runs **every Monday at 08:00 UTC** (the day after typical CR patch days). Perfor
 
 If any changes are detected, the script **automatically patches `cards.js`, `CARDS_DATA.json`, `cards-annotations.js`, and `config-filters.js`** and commits them back to `main` — triggering a fresh GitHub Pages deploy.
 
-> **Cost:** Worst case ~4 Gemini Flash calls per week. Free tier limit: 1,500/day. **You will not be charged.**
+> **Cost: $0 — free tier only, enforced three ways.**
+> 1. **Model chain is free-tier only.** Any model that would require billing returns `429 limit: 0` and is **skipped, never called** — the pipeline never falls back to a paid model.
+> 2. **Hard call cap.** `MAX_GEMINI_CALLS = 20` per run aborts the run before it could ever burn quota (normal usage is ~1–4 calls/week; free tier is 1,500/day).
+> 3. **The definitive guarantee — a no-billing project.** Create the key in a Google Cloud project with **no billing account linked** (default for a plain [AI Studio](https://aistudio.google.com/apikey) key). With no billing enabled, over-limit requests simply return `429` — Google *cannot* charge you. This is the real lock; the code guards are backups.
 
 To use this automation in your own fork:
-1. Go to `Settings → Secrets and variables → Actions`
-2. Add a secret named `GEMINI_API_KEY` with your [Google AI Studio](https://aistudio.google.com/) key
+1. Create a **free** key at [Google AI Studio](https://aistudio.google.com/apikey) — do **not** link a billing account to its project.
+2. Go to `Settings → Secrets and variables → Actions` and add a secret named `GEMINI_API_KEY` with that key.
 3. Enable GitHub Pages via `Settings → Pages → Source: GitHub Actions`
 
 To run the pipeline **locally**, copy `.env.example` to `.env` and add your key (the `.env` file is gitignored — never commit it).
