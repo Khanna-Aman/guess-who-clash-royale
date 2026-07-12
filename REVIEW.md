@@ -33,7 +33,7 @@ A genuinely polished, zero-dependency fan game with production-grade automation 
 - ✅ Card counts consistent: `cards.js` = 121, `CARDS_DATA.json` = 121
 - ✅ `.env` is **not** tracked and **not** in git history (`.gitignore` covers it)
 - ✅ Confirmed dead code and missing handlers via static grep
-- ✅ **Live-probed the automation pipeline:** `github-actions[bot]` has **0 commits** in history; upstream data source (`cr-api-data`) is **frozen at 120 cards, missing 12 the game already has**; CDN evo/hero probe conventions still return `200`; **0** currently-missed evolutions
+- ✅ **Live-probed the automation pipeline:** `github-actions[bot]` committed **once (2026-03-09)** then went dormant (~4 months idle as of this review); upstream data source (`cr-api-data`) is **frozen at 120 cards, missing 12 the game already has**; CDN evo/hero probe conventions still return `200`; **0** currently-missed evolutions
 
 ---
 
@@ -43,10 +43,10 @@ These are the findings that most affect a real player or a production deploy. Se
 
 ### C0 — The flagship "auto-updates weekly" pipeline is non-functional *(CI/CD, CRITICAL)*
 
-The README, a status badge, and `check-cards.yml`'s header all advertise a "fully automated, zero-human-intervention" weekly pipeline that detects new cards / hero skins / evolutions and commits them back to `main`. **In practice it has never worked.** This was verified live, not read from the YAML:
+The README, a status badge, and `check-cards.yml`'s header all advertise a "fully automated, zero-human-intervention" weekly pipeline that detects new cards / hero skins / evolutions and commits them back to `main`. **In practice it is not self-sustaining** — it ran once at the start and then went dormant. This was verified live, not read from the YAML:
 
 **Evidence**
-1. **Zero bot commits, ever.** `git log --all --author="github-actions"` is empty. In the repo's ~4.5-month life, the pipeline has produced no commits. Every card in `cards.js` was hand-added.
+1. **The bot committed exactly once, then stopped.** `github-actions[bot]` made a single auto-update commit on **2026-03-09** (one week after repo creation) — mostly a `CARDS_DATA.json` re-serialization plus a 4-line touch to `cards.js`/`cards-annotations.js`. It has not committed since (~4 months idle as of this review), despite a weekly cron. (Note: an earlier draft of this review said "zero bot commits" — that was read off a stale local clone that was 15 commits behind `origin/main`; corrected here.)
 2. **The cron is dormant.** Last human commit: `2026-03-02`. GitHub **automatically disables scheduled workflows after 60 days of no repository activity**, so the Monday cron has almost certainly not fired since ~early May 2026.
 3. **The upstream data source is frozen — the real root cause.** New-card detection diffs local data against `https://royaleapi.github.io/cr-api-data/json/cards.json`. Fetched live, that source returns **120 cards and is already missing 12 permanent cards the game ships**: `Berserker, Suspicious Bush, Goblin Curse, Vines, Void, Little Prince, Goblin Demolisher, Rune Giant, Goblin Machine, Goblinstein, Spirit Empress, Boss Bandit`. Diffing against a frozen upstream can **never** surface a genuinely new card — so new-card detection is structurally dead even if the cron fired perfectly. (The upstream's event-only cards — Super Witch, Terry, Party Hut, etc. — are correctly excluded by the blocklist, so that part works.)
 4. **The detection *logic* is actually fine**, which is why the rot is invisible. The CDN probe conventions still resolve: `knight-ev1.png` and `knight-hero.png` both return `200`. A full sweep of all 82 locally-"no-evo" cards against the CDN found **0 missed evolutions** — the data happens to be current today.
