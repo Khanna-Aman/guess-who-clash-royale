@@ -8,6 +8,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 🐛 Fixed
+- **Undo/scoring desync** — the manual `+` button and a missed guess now record an undoable history entry, so score, progression graph, and question log stay in sync after an undo.
+- **Duplicate secret pick** — Player 2 can no longer pick the same card Player 1 already chose.
+- Question log shows `(verbal)` instead of a misleading `(-0)` for manual/missed-guess entries.
+- Removed dead `transitionModal` markup and stray debug logging.
+
+### ♿ Accessibility
+- Board cards are now real `<button>` elements with `aria-pressed` and a visible focus ring — fully keyboard and screen-reader operable.
+- Guess modal: Enter submits, Escape cancels, Tab is trapped, and focus returns to the trigger on close.
+
+### 🔒 Security / Hardening
+- All card-name interpolation is HTML-escaped; image error handlers are attached via JS instead of inline `onerror` (removes an injection vector for LLM-sourced names).
+- Pipeline validates/normalizes the Gemini response before it can patch source files.
+- Added `.env.example`; verified no key ever entered git history.
+
+### ⚙️ CI/CD & Tooling
+- Test suite is now tracked (was gitignored) and gated: `deploy.yml` runs `node --test` before shipping; a new `tests.yml` runs on every PR; `check-cards.yml` validates data before any auto-commit.
+- **Card-data source freshness guard** — the weekly pipeline now opens a deduplicated issue when the upstream source is missing cards the game already ships, so new-card detection can no longer fail silently.
+- Added `sitemap.xml` (referenced by `robots.txt`) to the deploy.
+
+### 🎨 UX
+- **Play Again** starts a fresh match; **Menu** returns to the start screen (previously both reloaded the page).
+- Filter flip animation capped at ~360ms so large eliminations don't lag the score/log update.
+
+### 📚 Docs
+- Honest automation status (badge + README); fixed stale `CONTRIBUTING.md` references; added a full production audit (`REVIEW.md`).
+
 ---
 
 ## [1.0.0] — 2026-02-25

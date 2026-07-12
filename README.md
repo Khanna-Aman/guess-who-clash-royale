@@ -172,7 +172,7 @@ Triggers on every push to `main`. Publishes the root directory to GitHub Pages u
 > - **Check ① (new cards) is blind.** Its upstream source — [`royaleapi/cr-api-data`](https://github.com/RoyaleAPI/cr-api-data) — is **frozen**: it lists fewer cards than this game already ships (missing several permanent cards), so a genuinely new card can't be diffed in. **A maintained data source is needed** for new-card detection to work. Newly released cards must be added manually until then.
 > - **Checks ② and ③ (hero / evo refresh) work** — they probe the live CDN — but currently find nothing new to flip.
 >
-> Net: the automation is healthy; the **data source feeding new-card detection is stale.** Swapping it is the fix.
+> Net: the automation is healthy; the **data source feeding new-card detection is stale.** The pipeline now **detects this itself** — when the game ships permanent cards the upstream source doesn't list, it opens a single deduplicated `data-source-stale` issue so the blind spot is never silent. Swapping `ROYALE_URL` for a maintained source is the permanent fix.
 
 Runs **every Monday at 08:00 UTC** (the day after typical CR patch days). Performs three automated checks:
 
@@ -190,6 +190,8 @@ To use this automation in your own fork:
 1. Go to `Settings → Secrets and variables → Actions`
 2. Add a secret named `GEMINI_API_KEY` with your [Google AI Studio](https://aistudio.google.com/) key
 3. Enable GitHub Pages via `Settings → Pages → Source: GitHub Actions`
+
+To run the pipeline **locally**, copy `.env.example` to `.env` and add your key (the `.env` file is gitignored — never commit it).
 
 ---
 

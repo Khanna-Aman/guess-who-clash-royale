@@ -56,9 +56,10 @@ The README badge advertises "Auto-Updated Weekly." The mechanism **does run week
 **Net:** the automation is *running and green*, but new-card detection is a **silent blind spot** — the next card Supercell releases won't be auto-added because the upstream source that would reveal it is abandoned. The damage is latent, not active. The main sins are (a) a badge that implies the *data* changes weekly (it doesn't), and (b) a new-card path that can't ever fire.
 
 **Fix (in priority order)**
-1. **Make the docs honest** (done in this branch) — the badge now reads "Auto-Checked Weekly" and the Actions section explains the frozen-source blind spot instead of implying weekly data changes.
-2. **Replace the new-card data source.** `cr-api-data` is behind the live game; move check ① to a maintained source (RoyaleAPI's live API, the CDN asset listing, or a scrape) or new-card detection stays permanently blind.
-3. **Add a dry-run smoke test** so a future source-URL or CDN-convention change surfaces as a red run instead of a silent no-op — a green run currently proves nothing about correctness.
+1. ✅ **Make the docs honest** *(done)* — the badge now reads "Auto-Checked Weekly" and the Actions section explains the frozen-source blind spot instead of implying weekly data changes.
+2. ✅ **Make the blind spot loud** *(done)* — `check-new-cards.js` now compares the game's roster against the upstream source and, when the game ships permanent cards the source doesn't list, the workflow opens a single deduplicated `data-source-stale` issue. Verified: it correctly flags the current 12-card gap. The silent no-op is gone.
+3. ⏳ **Replace the new-card data source (owner).** `cr-api-data` is behind the live game; point `ROYALE_URL` at a maintained source (RoyaleAPI's live API, or a scrape) so check ① can actually add new cards rather than just alert. The assets repo (`cr-api-assets`) is current but lists ~588 art slugs incl. events/removed — usable for a probe, not as a clean roster.
+4. ⏳ **Add a dry-run smoke test** so a future source-URL or CDN-convention change surfaces as a red run instead of a silent no-op.
 4. **Confirm `GEMINI_API_KEY` is set as a repo secret** (it is — the runs succeed; the new pre-commit validation gate also depends on it).
 
 ### C1 — State desynchronization on undo after "Custom +" or a wrong guess *(correctness, HIGH)*
@@ -90,9 +91,11 @@ Reproduction:
 
 ### C4 — Live Gemini API key in the working tree *(security, HIGH — no leak yet)*
 
-`.env` contains a real `GEMINI_API_KEY=AIza…`. **Good news:** it is not tracked and not present anywhere in git history, and `.gitignore` correctly covers `.env` / `.env.*` / `*.env`. The exposure is local-disk only.
+`.env` contains a real `GEMINI_API_KEY=AIza…`. **Good news:** it is not tracked and not present anywhere in git history (verified with `git log --all -S`), and `.gitignore` correctly covers `.env` / `.env.*` / `*.env`. The exposure is local-disk only, and the script only ever logs the variable *name*, never its value.
 
-**Recommendation:** rotate the key in Google AI Studio as a precaution (it has been read into tooling), and keep using CI secrets for the pipeline. This is a "no harm yet — close the door" item.
+**Done in this branch:** added a tracked `.env.example` placeholder (with a `!.env.example` ignore exception) so contributors have the format without any real key; re-verified the key is absent from all history.
+
+**⏳ Remaining (owner-only, cannot be automated):** rotate the key in Google AI Studio as a precaution (it has been read into tooling). This is a "no harm yet — close the door" step.
 
 ### C5 — Duplicate secret-card pick is unguarded *(gameplay, MEDIUM-HIGH)*
 
@@ -173,18 +176,19 @@ Overall the legal posture is appropriately careful.
 
 ## 🏆 Prioritized Action Plan (impact ÷ effort)
 
-| # | Action | Impact | Effort | Refs |
-|---|---|:---:|:---:|---|
-| 1 | **Unblock new-card detection:** swap the frozen `cr-api-data` source for a maintained one + add a dry-run smoke test. (Docs↔reality gap already fixed: badge now "Auto-Checked Weekly".) | 🔴 High | 🟡 Med | C0 |
-| 2 | Push `manual` history entries from `+` and wrong-guess → fixes desync **and** activates dead undo branch | 🔴 High | 🟢 Low | C1, C2 |
-| 3 | Add `node --test` gate to `deploy.yml` and pre-commit in `check-cards.yml` | 🔴 High | 🟢 Low | C3 |
-| 4 | Rotate the Gemini key; confirm secret-only usage | 🔴 High | 🟢 Low | C4 |
-| 5 | Validate LLM output (schema + `node -c`) before writing/committing `cards.js` | 🟠 Med | 🟡 Med | M2 |
-| 6 | Guard duplicate secret picks — exclude P1's card from P2's picker | 🟠 Med | 🟢 Low | C5 |
-| 7 | Make board cards `<button aria-pressed>` + Enter-to-submit + focus trap in guess modal | 🟠 Med | 🟡 Med | M3, M4 |
-| 8 | Escape card names in `innerHTML` / `onerror` interpolation | 🟠 Med | 🟢 Low | M1 |
-| 9 | Fix stale `CONTRIBUTING.md` (`utils.js`; remove `CDN_MISSING`) | 🟡 Low | 🟢 V.Low | L2 |
-| 10 | Remove dead `transitionModal`; fix `robots.txt` sitemap; fix `(-0)` log badge | 🟡 Low | 🟢 V.Low | L1, L3, L4 |
-| 11 | Add tests for `applyFilter`, `undoLast`, `undoFullQuestion`, `adjustScore`, `computeStats` | 🔴 High | 🟡 Med | C3 |
+| Status | Action | Refs |
+|:---:|---|---|
+| ✅ | Fixed undo/scoring desync (`manual` history entries) — also activates the dead undo branch | C1, C2 |
+| ✅ | Test suite tracked + gated: `test` job in `deploy.yml`, `tests.yml` on PRs, validation in `check-cards.yml` | C3 |
+| ✅ | Duplicate secret-pick guard | C5 |
+| ✅ | Board cards `<button aria-pressed>` + Enter/Escape/Tab-trap in guess modal | M3, M4 |
+| ✅ | HTML-escape card names + drop inline `onerror`; validate Gemini output before patching | M1, M2 |
+| ✅ | Honest automation docs + **stale-source auto-alert** (deduplicated issue) | C0 |
+| ✅ | `.env.example` added; verified key absent from all history | C4 |
+| ✅ | Removed dead `transitionModal`; `sitemap.xml`; `(verbal)` log label; capped flip stagger; stale docs | L1, L3, L4, L7, L2 |
+| ⏳ | **Swap the frozen `cr-api-data` source** so check ① can add new cards, not just alert | C0 |
+| ⏳ | **Rotate the Gemini key** (owner-only) | C4 |
+| ⏳ | Broaden unit tests (`applyFilter`, `undoLast`, `computeStats`) + a pipeline dry-run smoke test | C3 |
+| ⏳ | Deferred (need visual QA): `renderBoard` diff-rebuild (M5), mobile responsive (M7), inline-style extraction (L5), offline SW (L8) | M5, M7, L5, L8 |
 
 **Bottom line:** an above-average, lovingly-built fan game whose two biggest problems are *invisible* today: an auto-update pipeline that runs green every week but is silently **blind to new cards** because its upstream source is frozen (C0), and an undo/scoring desync that quietly corrupts the scoreboard mid-game (C1). Neither shows up in a quick demo, which is exactly why they survived. The path to 8.5+ is short and concrete — point the pipeline at a live data source, fix the desync, gate deploys on the tests (done), and close the accessibility and key-hygiene items. The underlying craftsmanship is real; the gaps are in edge-case correctness and one stale external dependency.

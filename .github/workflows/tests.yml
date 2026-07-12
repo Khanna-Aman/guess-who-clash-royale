@@ -26,4 +26,4 @@ jobs:
           node-version: '20'
 
       - name: ✅ Run logic + data-integrity tests
-        run: node --test tests-internal/
+        run: node --test tests-internal/*.test.js

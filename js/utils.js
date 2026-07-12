@@ -82,7 +82,6 @@ function handleCardImgError(img, name) {
         const varIdx = currentIdx % variations.length;
         img.dataset.fallbackIdx = currentIdx + 1;
         img.src = cdns[cdnIdx](variations[varIdx]);
-        console.log(`Fallback effort for "${name}": trying URL index ${currentIdx}`);
     } else {
         img.dataset.triedAll = 'true';
         img.classList.add('img-error');

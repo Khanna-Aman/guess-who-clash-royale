@@ -702,6 +702,24 @@ async function checkForNewEvolutions(knownNames) {
         ]);
         console.log(`   API: ${apiCards.length} cards | Local: ${knownNames.size} cards\n`);
 
+        // ── Data-source freshness guard (fixes the C0 "new-card blind spot") ───
+        // The upstream RoyaleAPI open-data repo can freeze/lag behind the live
+        // game. If the game already ships permanent cards the source doesn't even
+        // list, new-card detection (Check ①) is structurally blind. Surface that
+        // loudly via a workflow output → deduplicated GitHub issue, instead of
+        // silently doing nothing.
+        const apiNames = new Set(apiCards.map(c => c && c.name).filter(Boolean));
+        const localOnly = [...knownNames].filter(n => !apiNames.has(n));
+        const STALE_THRESHOLD = 3;
+        if (localOnly.length >= STALE_THRESHOLD) {
+            console.warn(`⚠️  Data source looks STALE: ${localOnly.length} local card(s) absent upstream → ${localOnly.join(', ')}`);
+            setActionOutput('source_stale', 'true');
+            setActionOutput('stale_count', String(localOnly.length));
+            setActionOutput('stale_missing', localOnly.join(', '));
+        } else {
+            setActionOutput('source_stale', 'false');
+        }
+
         // ── Run all three checks ───────────────────────────────────────────────
         console.log('── CHECK ① : New cards ─────────────────────────────────────');
         const r1 = await checkForNewCards(apiCards, knownNames);

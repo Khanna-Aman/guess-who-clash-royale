@@ -68,7 +68,54 @@ jobs:
           node -c js/cards-annotations.js
           node -c js/config-filters.js
           node -e "JSON.parse(require('fs').readFileSync('data/CARDS_DATA.json','utf8'))"
-          node --test tests-internal/
+          node --test tests-internal/*.test.js
+
+      # If the game already ships permanent cards the upstream source doesn't
+      # list, new-card detection is blind (C0). Raise a single deduplicated
+      # issue so it never fails silently. Card names are passed via env (not
+      # inlined into the script) to avoid any injection.
+      - name: ⚠️ Flag stale data source
+        if: steps.pipeline.outputs.source_stale == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        env:
+          STALE_MISSING: ${{ steps.pipeline.outputs.stale_missing }}
+          STALE_COUNT: ${{ steps.pipeline.outputs.stale_count }}
+        with:
+          script: |
+            const label = 'data-source-stale';
+            const missing = process.env.STALE_MISSING || '(unknown)';
+            const count = process.env.STALE_COUNT || '?';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: label,
+            });
+            if (existing.data.length > 0) {
+              console.log('Stale-source issue already open — not duplicating.');
+              return;
+            }
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '## ⚠️ Card data source appears frozen',
+              '',
+              `The upstream new-card source (\`cr-api-data\`) is missing **${count}** permanent card(s) that the game already ships, so **new-card auto-detection (Check ①) cannot see genuinely new cards.**`,
+              '',
+              '**Cards present in the game but absent upstream:**',
+              '',
+              '> ' + missing,
+              '',
+              '**What this means:** hero/evo refresh still works, but newly released cards will NOT be added automatically until the data source is fixed.',
+              '',
+              '**How to resolve:**',
+              '- Point `ROYALE_URL` in `.github/scripts/check-new-cards.js` at a maintained source, **or**',
+              '- Add newly released cards manually (see `CONTRIBUTING.md`), then close this issue.',
+              '',
+              `_Raised automatically by the card-update workflow ([run](${runUrl}))._`,
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: '⚠️ Card data source is stale — new-card auto-detection is blind',
+              body, labels: [label],
+            });
 
       - name: 💾 Commit & push updated card files
         if: steps.pipeline.outputs.files_changed == 'true'

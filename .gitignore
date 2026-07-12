@@ -32,6 +32,8 @@ build/
 .env
 .env.*
 *.env
+# The placeholder template IS tracked (contains no real key):
+!.env.example
 
 # ── Scratch / Temp Files ─────────────────────────────────────
 temp/
