@@ -101,18 +101,29 @@ const CONFIG = path.join(ROOT, 'js', 'config-filters.js');
 // Confirmed working: https://royaleapi.github.io/cr-api-data/json/cards.json
 const ROYALE_URL = 'https://royaleapi.github.io/cr-api-data/json/cards.json';
 const CDN_HOST = 'royaleapi.github.io';
-// ── Gemini model fallback chain ──────────────────────────────────────────────
+// ── Gemini model fallback chain (FREE TIER ONLY) ─────────────────────────────
 // Tried in order. Falls through to the next if a model returns:
 //   • 404 Not Found   — model deprecated / removed from this API version
-//   • 429 limit:0     — model not on free tier for this key (billing required)
-// The chain is ordered: cheapest free-tier models first, paid models last.
-// At 4 calls/week, even the paid model costs <$0.01/month.
+//   • 429 limit:0     — model has NO free-tier quota for this key → SKIPPED,
+//                       never used. This is what keeps the pipeline free: a
+//                       billing-only model is never called.
+// All models below have a free tier. If none are free for the key, the chain
+// exhausts and the run aborts cleanly (exit 0) — it never falls back to paid.
 const GEMINI_MODELS = [
-    'gemini-2.5-flash',          // Primary: stable free-tier model (official ID as of 2026-02)
-    'gemini-2.5-flash-lite',     // Fallback: lighter 2.5 variant if available
-    'gemini-2.0-flash-lite',     // Fallback: older free-tier model (now deprecated by Google)
-    'gemini-2.0-flash',          // Last resort: deprecated, may require billing
+    'gemini-2.5-flash',          // Primary: stable free-tier model
+    'gemini-2.5-flash-lite',     // Fallback: lighter 2.5 variant
+    'gemini-2.0-flash-lite',     // Fallback: older free-tier model
+    'gemini-2.0-flash',          // Fallback: older free-tier model
 ];
+
+// ── Free-tier safety cap ─────────────────────────────────────────────────────
+// Hard ceiling on Gemini API calls per run. Normal usage is ~1–4 calls/week.
+// This is a runaway guard: if a swapped data source ever returns hundreds of
+// "new" cards (1 call each), the run stops here instead of burning quota.
+// Combined with a no-billing project (see README), this guarantees $0 cost.
+const MAX_GEMINI_CALLS = 20;
+let GEMINI_CALLS_MADE = 0;
+
 const CDN_BATCH = 15; // concurrent HEAD requests (polite to CDN)
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -233,6 +244,14 @@ async function callGemini(promptText, modelIdx = 0, attempt = 1) {
     if (modelIdx >= GEMINI_MODELS.length) {
         throw new Error(`All Gemini models exhausted. Tried: ${GEMINI_MODELS.join(', ')}. Check your API key quota at https://ai.dev/rate-limit`);
     }
+
+    // Free-tier safety cap — refuse to make more than MAX_GEMINI_CALLS requests
+    // per run, no matter how many candidates appear. Counts every real POST
+    // (including retries/fallbacks) since each one consumes quota.
+    if (GEMINI_CALLS_MADE >= MAX_GEMINI_CALLS) {
+        throw new Error(`Free-tier safety cap reached (${MAX_GEMINI_CALLS} Gemini calls). Aborting this run to guarantee no billing.`);
+    }
+    GEMINI_CALLS_MADE++;
 
     const model = GEMINI_MODELS[modelIdx];
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
