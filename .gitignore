@@ -13,9 +13,6 @@ desktop.ini
 *.log
 npm-debug.log*
 
-# ── Local Testing (Not for repo) ─────────────────────────────
-tests-internal/
-
 # ── Node (if ever added) ─────────────────────────────────────────────────────
 # Pipeline script deps are auto-installed by GitHub Actions — never commit them.
 # The .github/scripts/package-lock.json IS committed (locks exact dep versions

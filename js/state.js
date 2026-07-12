@@ -32,6 +32,26 @@ let state = {
     questionLog: [],
 };
 
+/** Reset all game state to a fresh match (no full page reload needed). */
+function newGame() {
+    state = {
+        phase: GamePhase.START,
+        board: [],
+        secretP1: null,
+        secretP2: null,
+        scoreP1: 0,
+        scoreP2: 0,
+        history: [],
+        sortKey: 'default',
+        sortDir: 'asc',
+        viewMode: 'all',
+        progressionP1: [],
+        progressionP2: [],
+        currentPlayer: 1,
+        questionLog: [],
+    };
+}
+
 function setPhase(phase) {
     state.phase = phase;
     switch (phase) {
@@ -75,8 +95,7 @@ function resetBoard() {
             delay += 10;
             setTimeout(() => {
                 state.board[i] = true;
-                const el = document.getElementById(`card-${i}`);
-                if (el) el.classList.remove('flipped');
+                setCardFlipped(document.getElementById(`card-${i}`), false);
             }, delay);
         }
     });
@@ -99,8 +118,7 @@ function undoLast(player) {
             delay += 12;
             setTimeout(() => {
                 state.board[idx] = action.prevStates[j];
-                const el = document.getElementById(`card-${idx}`);
-                if (el) el.classList.remove('flipped');
+                setCardFlipped(document.getElementById(`card-${idx}`), !action.prevStates[j]);
             }, delay);
         });
         adjustScore(player, -1);
@@ -120,15 +138,13 @@ function undoLast(player) {
             delay += 12;
             setTimeout(() => {
                 state.board[flipAction.index] = flipAction.prevState;
-                const el = document.getElementById(`card-${flipAction.index}`);
-                if (el) el.classList.toggle('flipped', !flipAction.prevState);
+                setCardFlipped(document.getElementById(`card-${flipAction.index}`), !flipAction.prevState);
             }, delay);
         });
         setTimeout(() => updateActiveCount(), delay + 20);
     } else if (action.type === 'flip') {
         state.board[action.index] = action.prevState;
-        const el = document.getElementById(`card-${action.index}`);
-        if (el) el.classList.toggle('flipped', !action.prevState);
+        setCardFlipped(document.getElementById(`card-${action.index}`), !action.prevState);
         updateActiveCount();
     }
 }
@@ -141,8 +157,7 @@ function undoFullQuestion(player) {
         delay += 12;
         setTimeout((d => () => {
             state.board[d.index] = d.prevState;
-            const el = document.getElementById(`card-${d.index}`);
-            if (el) el.classList.toggle('flipped', !d.prevState);
+            setCardFlipped(document.getElementById(`card-${d.index}`), !d.prevState);
         })(f), delay);
     }
     if (state.history.length === 0) {
@@ -155,8 +170,7 @@ function undoFullQuestion(player) {
             delay += 12;
             setTimeout(((i, ps) => () => {
                 state.board[i] = ps;
-                const el = document.getElementById(`card-${i}`);
-                if (el) el.classList.remove('flipped');
+                setCardFlipped(document.getElementById(`card-${i}`), !ps);
             })(idx, action.prevStates[j]), delay);
         });
         adjustScore(player, -1);
@@ -175,8 +189,7 @@ function undoFullQuestion(player) {
             delay += 12;
             setTimeout(((i, ps) => () => {
                 state.board[i] = ps;
-                const el = document.getElementById(`card-${i}`);
-                if (el) el.classList.toggle('flipped', !ps);
+                setCardFlipped(document.getElementById(`card-${i}`), !ps);
             })(flipAction.index, flipAction.prevState), delay);
         });
         setTimeout(() => updateActiveCount(), delay + 20);

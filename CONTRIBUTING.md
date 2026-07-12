@@ -35,9 +35,9 @@ All card data lives in two files that must **always be kept in sync**:
 ### Steps to Add a New Card
 
 1. Fork the repository and create a branch: `git checkout -b add/new-card-name`
-2. Add the entry to the correct elixir section in **both** `CARDS_DATA.json` and `cards.js`.
-3. If the card's image slug differs from `name.toLowerCase().replace(/ /g, '-')`, add an entry to `SLUG_OVERRIDES` in `game.js`.
-4. If the card's image is missing from the CDN, add its slug to `CDN_MISSING` in `game.js`.
+2. Add the entry to the correct elixir section in **both** `data/CARDS_DATA.json` and `js/cards.js`.
+3. Add the card's manual annotations (`hasHero`, `isGoblin`, `isUndead`, `isMan`, `isHuman`) to `js/cards-annotations.js`, and any role membership (swarm / tank / spawner) to `js/config-filters.js`.
+4. If the card's image slug differs from `name.toLowerCase().replace(/ /g, '-')`, add an entry to `SLUG_OVERRIDES` in `js/utils.js`. (If the image still fails to load, `handleCardImgError` in `js/utils.js` automatically retries a chain of alternate CDNs and slug variations — no manual list to maintain.)
 5. Open a Pull Request with a description of what you added/fixed.
 
 ---
@@ -65,6 +65,6 @@ Open a GitHub Issue tagged `enhancement` describing:
 ## 📐 Code Style
 
 - Pure vanilla JS — no frameworks or dependencies.
-- Preserve the existing section-header comment style in `game.js`.
-- New CSS classes go into `styles.css` under the relevant section.
-- Try to keep new filter logic inside the `wireFilters` function.
+- Preserve the existing section-header comment style used across the `js/` files.
+- New CSS classes go into `css/styles.css` under the relevant section.
+- Try to keep new filter logic inside the `wireFilterEvents` function in `js/filters.js`.
